@@ -1,0 +1,389 @@
+[
+  {
+    "id": "2f4ece760d02b265",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 15,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:50:26.485Z"
+  },
+  {
+    "id": "ff54d99e212db017",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 5.55,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:50:26.481Z"
+  },
+  {
+    "id": "5728d29f90bc0cbe",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 500,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:50:12.504Z"
+  },
+  {
+    "id": "a8815beb305c16ec",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 185,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:50:12.499Z"
+  },
+  {
+    "id": "1c9f29b1b55d7ab2",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 250,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:43.662Z"
+  },
+  {
+    "id": "f97567a98e247d28",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 92.5,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:43.656Z"
+  },
+  {
+    "id": "4386938f233662fc",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 250,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:43.404Z"
+  },
+  {
+    "id": "45c841c159927919",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 92.5,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:43.402Z"
+  },
+  {
+    "id": "c98714d6d3ec8d29",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 250,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:43.177Z"
+  },
+  {
+    "id": "9a1f8e961e183462",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 92.5,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:43.174Z"
+  },
+  {
+    "id": "2e7978870e6271ca",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 250,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:43.009Z"
+  },
+  {
+    "id": "2b0f2ea09c7ec849",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 92.5,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:43.005Z"
+  },
+  {
+    "id": "f39818c7ea558658",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 250,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:42.738Z"
+  },
+  {
+    "id": "facdabf4316f4e84",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 92.5,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:42.730Z"
+  },
+  {
+    "id": "3cb2b2037604da38",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 250,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:42.452Z"
+  },
+  {
+    "id": "1405c83bdb5f6b0e",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 92.5,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:42.443Z"
+  },
+  {
+    "id": "a339372b9ebd347e",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 250,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:42.187Z"
+  },
+  {
+    "id": "4659b25687ea2c93",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 92.5,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:42.184Z"
+  },
+  {
+    "id": "a29ecdb678f0ff1c",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 250,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:40.649Z"
+  },
+  {
+    "id": "01c2b2348d149163",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 92.5,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:40.646Z"
+  },
+  {
+    "id": "ea6adce24848948e",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 250,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:40.103Z"
+  },
+  {
+    "id": "e67bbd7e68e4f82c",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 92.5,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:40.100Z"
+  },
+  {
+    "id": "0dbf0610e8b0b3df",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 25,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:32.491Z"
+  },
+  {
+    "id": "1bfb016e0ac91811",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 9.25,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:32.485Z"
+  },
+  {
+    "id": "4d58db549d6aa6c5",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 175,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:25.546Z"
+  },
+  {
+    "id": "f4d27b9d5388b812",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 64.75,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:49:25.539Z"
+  },
+  {
+    "id": "13e04c8068f10b8b",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 12.5,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:04:46.581Z"
+  },
+  {
+    "id": "1d757f06a85a048f",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 4.63,
+    "description": "Ganho (room_time): Festa na Praia — 50/50 + meta 0% + host 1%",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-26T03:04:46.576Z"
+  },
+  {
+    "id": "f49c8b9d63b55195",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 12.5,
+    "description": "Comissão plataforma — Conversa Tech",
+    "roomId": "room-2",
+    "status": "completed",
+    "createdAt": "2026-06-26T02:13:10.380Z"
+  },
+  {
+    "id": "a07d3183b2157017",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 4.38,
+    "description": "Ganho (room_time): Conversa Tech — 50/50 + meta 0% + host 0%",
+    "roomId": "room-2",
+    "roomName": "Conversa Tech",
+    "status": "completed",
+    "createdAt": "2026-06-26T02:13:10.375Z"
+  },
+  {
+    "id": "b4c68a4276b390bf",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 15,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-25T23:40:31.577Z"
+  },
+  {
+    "id": "c3d887c43b4b5115",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 5,
+    "description": "Ganho (room_time): Festa na Praia — 50% plataforma (R$ 15) / 50% distribuído (R$ 15)",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-25T23:40:31.574Z"
+  },
+  {
+    "id": "4fbb17a3138d0617",
+    "userId": "user-demo",
+    "type": "recharge",
+    "amount": 100,
+    "description": "Recarga via PIX",
+    "status": "completed",
+    "paymentMethod": "PIX",
+    "createdAt": "2026-06-25T23:20:49.476Z"
+  },
+  {
+    "id": "de2c15074119198b",
+    "userId": "platform",
+    "type": "commission",
+    "amount": 15,
+    "description": "Comissão plataforma — Festa na Praia",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-25T23:19:38.318Z"
+  },
+  {
+    "id": "4de56bf904e026b8",
+    "userId": "user-demo",
+    "type": "earning",
+    "amount": 5,
+    "description": "Ganho (room_time): Festa na Praia — 50% plataforma (R$ 15) / 50% distribuído (R$ 15)",
+    "roomId": "room-1",
+    "roomName": "Festa na Praia",
+    "status": "completed",
+    "createdAt": "2026-06-25T23:19:38.313Z"
+  },
+  {
+    "id": "c4eed5b25962ea8e",
+    "userId": "admin-central",
+    "type": "gift_received",
+    "amount": 5,
+    "description": "Recebeu: Rosa",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-25T21:48:46.054Z"
+  },
+  {
+    "id": "828f8700814caddf",
+    "userId": "user-demo",
+    "type": "gift_sent",
+    "amount": -10,
+    "description": "Presente: Rosa",
+    "roomId": "room-1",
+    "status": "completed",
+    "createdAt": "2026-06-25T21:48:46.028Z"
+  }
+]

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SOFIA Capa 1 - Luz e Pureza | viewBox 375x667 | protected -->
+<!-- protected="true" -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 667" width="375" height="667">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9370DB"/>
+      <stop offset="50%" stop-color="#6A0DAD"/>
+      <stop offset="100%" stop-color="#D4AF37"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="50%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="375" height="667" fill="url(#bg1)"/>
+  <rect width="375" height="667" fill="url(#glow1)"/>
+  <circle cx="187" cy="220" r="90" fill="#FFFFFF" opacity="0.12"/>
+  <circle cx="187" cy="220" r="60" fill="#FFFFFF" opacity="0.18"/>
+  <g filter="url(#softGlow)">
+    <path d="M187 140 L200 185 L248 185 L210 215 L225 260 L187 230 L149 260 L164 215 L126 185 L174 185 Z" fill="#FFEB3B" opacity="0.95"/>
+  </g>
+  <text x="187" y="340" text-anchor="middle" font-family="Georgia, serif" font-size="42" font-weight="bold" fill="#FFFFFF" letter-spacing="8">SOFIA</text>
+  <text x="187" y="380" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#FFEB3B" letter-spacing="4">LUZ E PUREZA</text>
+  <line x1="87" y1="400" x2="287" y2="400" stroke="#FFFFFF" stroke-width="1" opacity="0.5"/>
+  <text x="187" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#FFFFFF" opacity="0.85">Social Platform</text>
+  <g opacity="0.6">
+    <circle cx="60" cy="520" r="3" fill="#FFFFFF"/>
+    <circle cx="120" cy="560" r="2" fill="#FFEB3B"/>
+    <circle cx="315" cy="540" r="3" fill="#FFFFFF"/>
+    <circle cx="255" cy="580" r="2" fill="#FFEB3B"/>
+  </g>
+</svg>

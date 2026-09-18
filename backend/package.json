@@ -1,0 +1,11 @@
+{
+  "name": "sofia-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Módulos Node.js compartilhados (economia, API, cron)",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.0"
+  }
+}

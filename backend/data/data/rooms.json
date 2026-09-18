@@ -1,0 +1,233 @@
+[
+  {
+    "id": "room-1",
+    "name": "Festa na Praia",
+    "description": "Venha curtir uma festa incrível!",
+    "theme": "Festa",
+    "coverUrl": "",
+    "chairs": 12,
+    "currentUsers": 2,
+    "isPrivate": false,
+    "allowGuests": true,
+    "hostId": "user-demo",
+    "hostName": "Usuário Demo",
+    "moderatorIds": [],
+    "participants": [
+      "1",
+      "2"
+    ],
+    "bannedUsers": [],
+    "region": "América do Sul",
+    "earnings": 150,
+    "isActive": true,
+    "seats": [
+      {
+        "index": 0,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 1,
+        "userId": null,
+        "userName": null,
+        "role": "owner",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 2,
+        "userId": null,
+        "userName": null,
+        "role": "owner",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 3,
+        "userId": null,
+        "userName": null,
+        "role": "owner",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 4,
+        "userId": null,
+        "userName": null,
+        "role": "owner",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 5,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 6,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 7,
+        "userId": null,
+        "userName": null,
+        "role": "owner",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 8,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 9,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 10,
+        "userId": null,
+        "userName": null,
+        "role": "owner",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 11,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      }
+    ],
+    "createdAt": "2026-06-25T19:42:07.005Z"
+  },
+  {
+    "id": "room-2",
+    "name": "Conversa Tech",
+    "description": "Discussões sobre tecnologia",
+    "theme": "Conversa",
+    "coverUrl": "",
+    "chairs": 8,
+    "currentUsers": 3,
+    "isPrivate": false,
+    "allowGuests": true,
+    "hostId": "1",
+    "hostName": "Maria",
+    "moderatorIds": [],
+    "participants": [
+      "1",
+      "2",
+      "user-demo"
+    ],
+    "bannedUsers": [],
+    "region": "América do Sul",
+    "earnings": 80,
+    "isActive": true,
+    "seats": [
+      {
+        "index": 0,
+        "userId": "1",
+        "userName": "Maria",
+        "role": "owner",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 1,
+        "userId": "user-demo",
+        "userName": "Usuário Demo",
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 2,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 3,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 4,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 5,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 6,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      },
+      {
+        "index": 7,
+        "userId": null,
+        "userName": null,
+        "role": "participant",
+        "isMuted": false,
+        "isLocked": false,
+        "giftCount": 0
+      }
+    ],
+    "createdAt": "2026-06-25T20:42:07.005Z"
+  }
+]

@@ -1,0 +1,7 @@
+<svg width="375" height="667" viewBox="0 0 375 667" xmlns="http://www.w3.org/2000/svg">
+  <rect width="375" height="667" fill="#D8BFD8"/>
+  <text x="50%" y="50%" font-family="Arial" font-size="30" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">SOFIA — Delicadeza e Harmonia</text>
+  <line x1="0" y1="0" x2="375" y2="667" stroke="#BA55D3" stroke-width="2"/>
+  <line x1="375" y1="0" x2="0" y2="667" stroke="#BA55D3" stroke-width="2"/>
+  <circle cx="187.5" cy="333.5" r="100" stroke="#FFFFFF" stroke-width="3" fill="none"/>
+</svg>

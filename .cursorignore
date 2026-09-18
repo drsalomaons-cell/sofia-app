@@ -1,0 +1,11 @@
+﻿node_modules/
+build/
+dist/
+.git/
+*.zip
+temp/
+OneDrive/
+assets/imagens-grandes/
+.dart_tool/
+android/.gradle/
+ios/Pods/

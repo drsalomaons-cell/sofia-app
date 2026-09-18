@@ -1,0 +1,888 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOFIA - Painel de Identificação e Gestão de Usuários</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f0f2f5; min-height: 100vh; }
+
+        /* ============== LAYOUT PRINCIPAL ============== */
+        .app-container { display: flex; min-height: 100vh; }
+
+        /* ============== BARRA LATERAL ESQUERDA - PERFIL DO USUÁRIO ============== */
+        .barra-perfil {
+            width: 320px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            z-index: 60;
+        }
+
+        .perfil-cabecalho {
+            background: linear-gradient(135deg, #6a1b9a, #8e24aa);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .foto-perfil {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: white;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #6a1b9a;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .perfil-nome { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+        .perfil-titulo { font-size: 13px; opacity: 0.85; margin-bottom: 12px; }
+        .status-usuario {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+        }
+        .status-ponto {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+        }
+        .status-offline .status-ponto { background: #9e9e9e; }
+
+        .perfil-corpo { padding: 20px; }
+        
+        .secao-perfil { margin-bottom: 24px; }
+        .secao-titulo {
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #888;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .campo-perfil { margin-bottom: 14px; }
+        .campo-etiqueta { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .campo-valor { font-size: 14px; color: #333; word-break: break-word; }
+        
+        .etiqueta-regiao {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* DISPOSITIVO */
+        .dispositivo-card {
+            background: #fafafa;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #6a1b9a;
+        }
+        .dispositivo-linha { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+        .dispositivo-etiqueta { color: #888; }
+
+        /* FREQUÊNCIA DE USO */
+        .freq-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+        }
+        .freq-barra {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            margin-top: 4px;
+        }
+        .freq-barra-interna {
+            height: 100%;
+            background: linear-gradient(90deg, #6a1b9a, #8e24aa);
+            border-radius: 3px;
+        }
+
+        /* AÇÕES RÁPIDAS */
+        .acoes-rapidas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .acao-btn {
+            padding: 10px 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .acao-btn.vermelho { background: #ffebee; color: #c62828; }
+        .acao-btn.laranja { background: #fff3e0; color: #e65100; }
+        .acao-btn.azul { background: #e3f2fd; color: #1565c0; }
+        .acao-btn.roxo { background: #f3e5f5; color: #6a1b9a; }
+
+        /* BOTÃO DE LISTA DE USUÁRIOS */
+        .btn-ver-lista {
+            width: 100%;
+            padding: 12px;
+            background: #6a1b9a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 16px;
+            font-weight: 500;
+        }
+
+        /* ============== CONTEÚDO PRINCIPAL ============== */
+        .conteudo-principal {
+            flex: 1;
+            margin-left: 340px;
+            padding: 24px 30px;
+        }
+
+        .topo-pagina {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .topo-titulo h1 { font-size: 24px; color: #333; }
+        .topo-titulo p { font-size: 14px; color: #888; margin-top: 4px; }
+
+        .barra-pesquisa {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .barra-pesquisa input {
+            flex: 1;
+            max-width: 400px;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .btn-roxo { background: #6a1b9a; color: white; }
+        .btn-cinza { background: #e0e0e0; color: #444; }
+
+        /* LISTA DE USUÁRIOS - CARDS */
+        .grade-usuarios {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .card-usuario {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid transparent;
+        }
+        .card-usuario:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+        .card-usuario.selecionado {
+            border-color: #6a1b9a;
+            background: #faf8fc;
+        }
+
+        .card-topo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .card-foto {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6a1b9a, #8e24aa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            font-weight: bold;
+        }
+        .card-nome { font-weight: 600; font-size: 16px; margin-bottom: 2px; }
+        .card-sub { font-size: 12px; color: #888; }
+        .card-status {
+            margin-left: auto;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .ponto-online { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; }
+        .ponto-offline { width: 8px; height: 8px; border-radius: 50%; background: #9e9e9e; }
+
+        .card-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 12px;
+            font-size: 13px;
+        }
+        .card-info-item .etiqueta { color: #888; font-size: 11px; }
+        .card-info-item .valor { color: #333; }
+
+        .card-ultima {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* TELA DE LOGIN */
+        .tela-login {
+            background: linear-gradient(135deg, #4a148c, #7b1fa2);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .caixa-login {
+            background: white; border-radius: 16px; padding: 40px 32px;
+            width: 100%; max-width: 420px; box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        }
+        .caixa-login h1 { text-align: center; color: #6a1b9a; margin-bottom: 8px; font-size: 28px; }
+        .form-grupo-login { margin-bottom: 18px; }
+        .form-grupo-login label { display: block; margin-bottom: 6px; font-size: 14px; color: #444; font-weight: 500; }
+        .form-grupo-login input {
+            width: 100%; padding: 14px; border: 2px solid #e8eaf6; border-radius: 8px;
+            font-size: 15px; outline: none;
+        }
+        .btn-login {
+            width: 100%; padding: 14px; background: linear-gradient(90deg, #6a1b9a, #8e24aa);
+            color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold;
+            cursor: pointer; margin-top: 8px;
+        }
+        .msg-login { margin-top: 14px; padding: 12px; border-radius: 6px; display: none; text-align: center; font-size: 14px; }
+        .msg-erro { background: #ffebee; color: #c62828; display: block; }
+
+        /* OCULTAR/EXIBIR */
+        .escondido { display: none !important; }
+        
+        /* RESPONSIVO */
+        @media (max-width: 900px) {
+            .barra-perfil { position: fixed; z-index: 100; transform: translateX(-100%); transition: transform 0.3s; }
+            .barra-perfil.aberta { transform: translateX(0); }
+            .conteudo-principal { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============== TELA DE LOGIN ============== -->
+    <div class="tela-login" id="telaLogin">
+        <div class="caixa-login">
+            <h1>✨ SOFIA</h1>
+            <p style="text-align: center; color: #888; margin-bottom: 28px;">Sistema de Identificação e Gestão de Usuários</p>
+            <form id="formLogin">
+                <div class="form-grupo-login">
+                    <label>E-mail</label>
+                    <input type="email" id="email" value="admin@sofia.com">
+                </div>
+                <div class="form-grupo-login">
+                    <label>Senha</label>
+                    <input type="password" id="senha" value="123456">
+                </div>
+                <div id="mensagemLogin" class="msg-login"></div>
+                <button type="submit" class="btn-login">ENTRAR NO SISTEMA</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============== TELA PRINCIPAL ============== -->
+    <div id="telaApp" style="display: none;">
+        <div class="app-container">
+
+            <!-- ============== BARRA LATERAL ESQUERDA - FICHA COMPLETA DO USUÁRIO ============== -->
+            <aside class="barra-perfil" id="barraPerfil">
+                <!-- CABEÇALHO COM FOTO E NOME -->
+                <div class="perfil-cabecalho">
+                    <div class="foto-perfil" id="fotoPerfil">A</div>
+                    <div class="perfil-nome" id="nomePerfil">Selecione um Usuário</div>
+                    <div class="perfil-titulo" id="tipoPerfil">-</div>
+                    <div class="status-usuario" id="statusPerfil">
+                        <span class="status-ponto"></span>
+                        <span id="textoStatus">-</span>
+                    </div>
+                </div>
+
+                <!-- DADOS COMPLETOS DO USUÁRIO -->
+                <div class="perfil-corpo" id="dadosPerfil" style="display: none;">
+                    
+                    <!-- 📋 DADOS PESSOAIS -->
+                    <div class="secao-perfil">
+                        <div class="secao-titulo">📋 Dados Pessoais</div>
+                        <div class="campo-perfil">
+                            <div class="campo-etiqueta">Nome Completo</div>
+                            <div class="campo-valor" id="ficha-nome">-</div>
+                        </div>
+                        <div class="campo-perfil">
+                            <div class="campo-etiqueta">E-mail</div>
+                            <div class="campo-valor" id="ficha-email">-</div>
+                        </div>
+                        <div class="campo-perfil">
+                            <div class="campo-etiqueta">Telefone / WhatsApp</div>
+                            <div class="campo-valor" id="ficha-telefone">-</div>
+                        </div>
+                        <div class="campo-perfil">
+                            <div class="campo-etiqueta">Cidade / Região</div>
+                            <div class="campo-valor" id="ficha-cidade">-</div>
+                        </div>
+                        <div class="campo-perfil">
+                            <div class="campo-etiqueta">Data de Cadastro</div>
+                            <div class="campo-valor" id="ficha-cadastro">-</div>
+                        </div>
+                        <div class="campo-perfil">
+                            <div class="campo-etiqueta">Descrição / Observações</div>
+                            <div class="campo-valor" id="ficha-descricao" style="font-size: 13px; line-height: 1.5;">-</div>
+                        </div>
+                    </div>
+
+                    <!-- 📱 APARELHO / DISPOSITIVO -->
+                    <div class="secao-perfil">
+                        <div class="secao-titulo">📱 Aparelho / Dispositivo</div>
+                        <div class="dispositivo-card">
+                            <div class="dispositivo-linha">
+                                <span class="dispositivo-etiqueta">Modelo:</span>
+                                <span id="disp-modelo">-</span>
+                            </div>
+                            <div class="dispositivo-linha">
+                                <span class="dispositivo-etiqueta">IMEI:</span>
+                                <span id="disp-imei">-</span>
+                            </div>
+                            <div class="dispositivo-linha">
+                                <span class="dispositivo-etiqueta">IP de Acesso:</span>
+                                <span id="disp-ip">-</span>
+                            </div>
+                            <div class="dispositivo-linha">
+                                <span class="dispositivo-etiqueta">Último Acesso:</span>
+                                <span id="disp-ultimo">-</span>
+                            </div>
+                            <div class="dispositivo-linha">
+                                <span class="dispositivo-etiqueta">Versão do App:</span>
+                                <span id="disp-versao">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 📊 FREQUÊNCIA E USO -->
+                    <div class="secao-perfil">
+                        <div class="secao-titulo">📊 Frequência de Uso</div>
+                        <div class="freq-item">
+                            <span>Dias ativos / Mês</span>
+                            <span id="freq-dias">-</span>
+                        </div>
+                        <div class="freq-item">
+                            <span>Tempo médio / dia</span>
+                            <span id="freq-tempo">-</span>
+                        </div>
+                        <div class="freq-item">
+                            <span>Entradas esta semana</span>
+                            <span id="freq-acessos">-</span>
+                        </div>
+                        <div class="freq-item">
+                            <span>Nível de Engajamento</span>
+                            <span id="freq-nivel">-</span>
+                        </div>
+                        <div class="freq-barra">
+                            <div class="freq-barra-interna" id="barra-engajamento" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- ⚡ AÇÕES RÁPIDAS -->
+                    <div class="secao-perfil">
+                        <div class="secao-titulo">⚡ Ações Rápidas</div>
+                        <div class="acoes-rapidas">
+                            <button class="acao-btn roxo" onclick="editarUsuarioAtual()">✏️ Editar</button>
+                            <button class="acao-btn azul" onclick="verHistoricoAtual()">📝 Histórico</button>
+                            <button class="acao-btn laranja" onclick="suspenderUsuarioAtual()">⏳ Suspender</button>
+                            <button class="acao-btn vermelho" onclick="banirUsuarioAtual()">🚫 Banir</button>
+                        </div>
+                    </div>
+
+                    <button class="btn-ver-lista" onclick="fecharPerfil()">← Voltar para Lista</button>
+                </div>
+            </aside>
+
+            <!-- ============== CONTEÚDO PRINCIPAL - LISTA DE USUÁRIOS ============== -->
+            <main class="conteudo-principal" id="areaPrincipal">
+                <div class="topo-pagina">
+                    <div class="topo-titulo">
+                        <h1>👥 Identificação e Gestão de Usuários</h1>
+                        <p>Base de dados completa - clique em um usuário para ver a ficha detalhada</p>
+                    </div>
+                </div>
+
+                <!-- BARRA DE PESQUISA E FILTROS -->
+                <div class="barra-pesquisa">
+                    <input type="text" id="buscaGeral" placeholder="🔍 Buscar por nome, e-mail, telefone ou cidade..." oninput="filtrarUsuarios()">
+                    <button class="btn btn-cinza" onclick="limparBusca()">Limpar</button>
+                    <button class="btn btn-roxo" onclick="abrirModalNovoUsuario()">+ Novo Usuário</button>
+                </div>
+
+                <!-- CONTADORES -->
+                <div style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <div style="background: white; padding: 12px 20px; border-radius: 8px; font-size: 14px;">
+                        <strong style="color: #6a1b9a; font-size: 18px;" id="totalUsuarios">1</strong> total
+                    </div>
+                    <div style="background: white; padding: 12px 20px; border-radius: 8px; font-size: 14px;">
+                        <strong style="color: #4caf50; font-size: 18px;" id="totalAtivos">1</strong> ativos
+                    </div>
+                    <div style="background: white; padding: 12px 20px; border-radius: 8px; font-size: 14px;">
+                        <strong style="color: #ff9800; font-size: 18px;" id="totalInativos">0</strong> inativos
+                    </div>
+                    <div style="background: white; padding: 12px 20px; border-radius: 8px; font-size: 14px;">
+                        <strong style="color: #f44336; font-size: 18px;" id="totalBloqueados">0</strong> bloqueados
+                    </div>
+                </div>
+
+                <!-- GRADE DE CARDS COM USUÁRIOS -->
+                <div class="grade-usuarios" id="gradeUsuarios">
+                    <!-- PREENCHIDO VIA JAVASCRIPT -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ============== MODAL NOVO/EDITAR USUÁRIO ============== -->
+    <div class="fundo-modal" id="modalUsuario" style="display: none;">
+        <div class="modal" style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="tituloModalUsuario">Novo Usuário</h3>
+                <button onclick="fecharModalUsuario()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: #888;">&times;</button>
+            </div>
+            <form id="formUsuario" onsubmit="salvarUsuario(event)">
+                <input type="hidden" id="usuarioId">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500;">Nome Completo *</label>
+                    <input type="text" id="u-nome" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500;">E-mail *</label>
+                    <input type="email" id="u-email" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500;">Telefone</label>
+                        <input type="tel" id="u-telefone" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500;">Cidade/UF</label>
+                        <input type="text" id="u-cidade" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500;">Descrição/Observações</label>
+                    <textarea id="u-descricao" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"></textarea>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" onclick="fecharModalUsuario()" style="padding: 10px 20px; border: none; border-radius: 6px; background: #e0e0e0; cursor: pointer;">Cancelar</button>
+                    <button type="submit" style="padding: 10px 20px; border: none; border-radius: 6px; background: #6a1b9a; color: white; cursor: pointer; font-weight: 500;">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let usuarioLogado = null;
+        let usuarioSelecionado = null;
+
+        // BANCO DE DADOS DE EXEMPLO
+        let usuarios = [
+            {
+                id: 'admin-001',
+                nome: 'Administrador Central',
+                email: 'admin@sofia.com',
+                telefone: '(34) 99999-0000',
+                cidade: 'Uberlândia / MG',
+                descricao: 'Administrador principal do sistema SOFIA. Acesso completo a todas as regiões e funcionalidades.',
+                tipo: 'Administrador Central',
+                ativo: true,
+                online: true,
+                dataCadastro: '18/09/2026',
+                dispositivo: {
+                    modelo: 'Computador / Windows',
+                    imei: 'N/A',
+                    ip: '192.168.0.248',
+                    ultimoAcesso: 'Hoje às 02:35',
+                    versaoApp: 'Web v2.5'
+                },
+                frequencia: {
+                    diasMes: '30/30',
+                    tempoMedio: '~8h/dia',
+                    acessosSemana: '45',
+                    engajamento: 100
+                }
+            },
+            {
+                id: 'user-002',
+                nome: 'Maria Silva Santos',
+                email: 'maria.silva@email.com',
+                telefone: '(11) 98888-1234',
+                cidade: 'São Paulo / SP',
+                descricao: 'Usuária ativa desde o lançamento. Participa frequentemente dos eventos e rankings.',
+                tipo: 'Usuário',
+                ativo: true,
+                online: false,
+                dataCadastro: '02/08/2026',
+                dispositivo: {
+                    modelo: 'Samsung Galaxy S23',
+                    imei: '351234567890123',
+                    ip: '187.12.34.56',
+                    ultimoAcesso: '17/09/2026 às 22:15',
+                    versaoApp: 'v1.8.2'
+                },
+                frequencia: {
+                    diasMes: '22/30',
+                    tempoMedio: '~2h/dia',
+                    acessosSemana: '18',
+                    engajamento: 73
+                }
+            },
+            {
+                id: 'user-003',
+                nome: 'João Pereira Costa',
+                email: 'joao.pereira@email.com',
+                telefone: '(31) 97777-9876',
+                cidade: 'Belo Horizonte / MG',
+                descricao: 'Novo usuário. Convidado por indicação. Ainda explorando as funcionalidades do sistema.',
+                tipo: 'Usuário',
+                ativo: true,
+                online: true,
+                dataCadastro: '05/09/2026',
+                dispositivo: {
+                    modelo: 'iPhone 14 Pro',
+                    imei: '359876543210987',
+                    ip: '177.45.67.89',
+                    ultimoAcesso: 'Agora mesmo',
+                    versaoApp: 'v1.8.2'
+                },
+                frequencia: {
+                    diasMes: '12/30',
+                    tempoMedio: '~45min/dia',
+                    acessosSemana: '6',
+                    engajamento: 40
+                }
+            },
+            {
+                id: 'user-004',
+                nome: 'Ana Carolina Mendes',
+                email: 'ana.mendes@email.com',
+                telefone: '(85) 96666-4567',
+                cidade: 'Fortaleza / CE',
+                descricao: 'Usuária engajada no ranking de eventos. Sempre entre os primeiros colocados.',
+                tipo: 'Usuário',
+                ativo: false,
+                online: false,
+                dataCadastro: '15/06/2026',
+                dispositivo: {
+                    modelo: 'Xiaomi Redmi Note 12',
+                    imei: '861122334455667',
+                    ip: '45.227.89.101',
+                    ultimoAcesso: '10/09/2026 às 14:30',
+                    versaoApp: 'v1.8.0'
+                },
+                frequencia: {
+                    diasMes: '0/7 últimos dias',
+                    tempoMedio: '-',
+                    acessosSemana: '0',
+                    engajamento: 0
+                }
+            }
+        ];
+
+        // ========== LOGIN ==========
+        document.getElementById('formLogin').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const msg = document.getElementById('mensagemLogin');
+            
+            if (email === 'admin@sofia.com' && senha === '123456') {
+                usuarioLogado = { nome: 'Administrador Central', email };
+                mostrarSistema();
+            } else {
+                msg.textContent = '❌ E-mail ou senha incorretos';
+                msg.className = 'msg-login msg-erro';
+            }
+        });
+
+        function mostrarSistema() {
+            document.getElementById('telaLogin').style.display = 'none';
+            document.getElementById('telaApp').style.display = 'block';
+            carregarGradeUsuarios();
+            atualizarContadores();
+        }
+
+        // ========== CARREGAR GRADE DE USUÁRIOS ==========
+        function carregarGradeUsuarios(lista = usuarios) {
+            const grade = document.getElementById('gradeUsuarios');
+            grade.innerHTML = '';
+            
+            if (lista.length === 0) {
+                grade.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 60px; color: #888;">Nenhum usuário encontrado</p>';
+                return;
+            }
+            
+            lista.forEach(u => {
+                const inicial = u.nome.charAt(0).toUpperCase();
+                grade.innerHTML += `
+                    <div class="card-usuario" onclick="abrirPerfil('${u.id}')" id="card-${u.id}">
+                        <div class="card-topo">
+                            <div class="card-foto">${inicial}</div>
+                            <div>
+                                <div class="card-nome">${u.nome}</div>
+                                <div class="card-sub">${u.tipo}</div>
+                            </div>
+                            <div class="card-status">
+                                <span class="${u.online ? 'ponto-online' : 'ponto-offline'}"></span>
+                                <span style="font-size: 11px; color: #888;">${u.online ? 'Online' : 'Offline'}</span>
+                            </div>
+                        </div>
+                        <div class="card-info">
+                            <div class="card-info-item">
+                                <div class="etiqueta">E-mail</div>
+                                <div class="valor" style="font-size: 12px;">${u.email}</div>
+                            </div>
+                            <div class="card-info-item">
+                                <div class="etiqueta">Cidade</div>
+                                <div class="valor">${u.cidade.split('/')[0]}</div>
+                            </div>
+                            <div class="card-info-item">
+                                <div class="etiqueta">Telefone</div>
+                                <div class="valor">${u.telefone || '-'}</div>
+                            </div>
+                            <div class="card-info-item">
+                                <div class="etiqueta">Status</div>
+                                <div class="valor" style="color: ${u.ativo ? '#4caf50' : '#f44336'};">${u.ativo ? '✅ Ativo' : '❌ Inativo'}</div>
+                            </div>
+                        </div>
+                        <div class="card-ultima">
+                            📱 ${u.dispositivo.modelo} • Último acesso: ${u.dispositivo.ultimoAcesso}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // ========== ABRIR FICHA DETALHADA DO USUÁRIO ==========
+        function abrirPerfil(id) {
+            usuarioSelecionado = usuarios.find(u => u.id === id);
+            if (!usuarioSelecionado) return;
+            
+            // Destaca o card selecionado
+            document.querySelectorAll('.card-usuario').forEach(c => c.classList.remove('selecionado'));
+            document.getElementById(`card-${id}`).classList.add('selecionado');
+            
+            // Preenche os dados na barra lateral
+            const u = usuarioSelecionado;
+            document.getElementById('fotoPerfil').textContent = u.nome.charAt(0).toUpperCase();
+            document.getElementById('nomePerfil').textContent = u.nome;
+            document.getElementById('tipoPerfil').textContent = u.tipo;
+            
+            // Status
+            const statusEl = document.getElementById('statusPerfil');
+            if (u.online) {
+                statusEl.className = 'status-usuario';
+                statusEl.querySelector('.status-ponto').style.background = '#4caf50';
+                document.getElementById('textoStatus').textContent = 'Online agora';
+            } else {
+                statusEl.className = 'status-usuario status-offline';
+                statusEl.querySelector('.status-ponto').style.background = '#9e9e9e';
+                document.getElementById('textoStatus').textContent = 'Última vez: ' + u.dispositivo.ultimoAcesso.split(' ')[0];
+            }
+            
+            // Dados pessoais
+            document.getElementById('ficha-nome').textContent = u.nome;
+            document.getElementById('ficha-email').textContent = u.email;
+            document.getElementById('ficha-telefone').textContent = u.telefone || 'Não informado';
+            document.getElementById('ficha-cidade').textContent = u.cidade;
+            document.getElementById('ficha-cadastro').textContent = u.dataCadastro;
+            document.getElementById('ficha-descricao').textContent = u.descricao || 'Sem observações';
+            
+            // Dispositivo
+            document.getElementById('disp-modelo').textContent = u.dispositivo.modelo;
+            document.getElementById('disp-imei').textContent = u.dispositivo.imei;
+            document.getElementById('disp-ip').textContent = u.dispositivo.ip;
+            document.getElementById('disp-ultimo').textContent = u.dispositivo.ultimoAcesso;
+            document.getElementById('disp-versao').textContent = u.dispositivo.versaoApp;
+            
+            // Frequência
+            document.getElementById('freq-dias').textContent = u.frequencia.diasMes;
+            document.getElementById('freq-tempo').textContent = u.frequencia.tempoMedio;
+            document.getElementById('freq-acessos').textContent = u.frequencia.acessosSemana;
+            document.getElementById('freq-nivel').textContent = u.frequencia.engajamento + '%';
+            document.getElementById('barra-engajamento').style.width = u.frequencia.engajamento + '%';
+            
+            // Mostra os dados
+            document.getElementById('dadosPerfil').style.display = 'block';
+        }
+
+        function fecharPerfil() {
+            usuarioSelecionado = null;
+            document.querySelectorAll('.card-usuario').forEach(c => c.classList.remove('selecionado'));
+            document.getElementById('dadosPerfil').style.display = 'none';
+            document.getElementById('nomePerfil').textContent = 'Selecione um Usuário';
+            document.getElementById('tipoPerfil').textContent = '-';
+            document.getElementById('textoStatus').textContent = '-';
+            document.getElementById('fotoPerfil').textContent = '?';
+        }
+
+        // ========== CONTADORES ==========
+        function atualizarContadores() {
+            document.getElementById('totalUsuarios').textContent = usuarios.length;
+            document.getElementById('totalAtivos').textContent = usuarios.filter(u => u.ativo).length;
+            document.getElementById('totalInativos').textContent = usuarios.filter(u => !u.ativo).length;
+            document.getElementById('totalBloqueados').textContent = '0';
+        }
+
+        // ========== BUSCA E FILTRO ==========
+        function filtrarUsuarios() {
+            const termo = document.getElementById('buscaGeral').value.toLowerCase();
+            if (!termo) {
+                carregarGradeUsuarios();
+                return;
+            }
+            const filtrado = usuarios.filter(u => 
+                u.nome.toLowerCase().includes(termo) ||
+                u.email.toLowerCase().includes(termo) ||
+                u.telefone.includes(termo) ||
+                u.cidade.toLowerCase().includes(termo)
+            );
+            carregarGradeUsuarios(filtrado);
+        }
+
+        function limparBusca() {
+            document.getElementById('buscaGeral').value = '';
+            carregarGradeUsuarios();
+        }
+
+        // ========== MODAL NOVO USUÁRIO ==========
+        function abrirModalNovoUsuario() {
+            document.getElementById('tituloModalUsuario').textContent = 'Novo Usuário';
+            document.getElementById('formUsuario').reset();
+            document.getElementById('usuarioId').value = '';
+            document.getElementById('modalUsuario').style.display = 'flex';
+        }
+
+        function fecharModalUsuario() {
+            document.getElementById('modalUsuario').style.display = 'none';
+        }
+
+        function salvarUsuario(e) {
+            e.preventDefault();
+            const id = document.getElementById('usuarioId').value;
+            const novo = {
+                id: id || 'user-' + Date.now(),
+                nome: document.getElementById('u-nome').value,
+                email: document.getElementById('u-email').value,
+                telefone: document.getElementById('u-telefone').value || 'Não informado',
+                cidade: document.getElementById('u-cidade').value || 'Não informado',
+                descricao: document.getElementById('u-descricao').value || 'Sem observações',
+                tipo: 'Usuário',
+                ativo: true,
+                online: false,
+                dataCadastro: new Date().toLocaleDateString('pt-BR'),
+                dispositivo: {
+                    modelo: 'Aguardando primeiro acesso',
+                    imei: '-',
+                    ip: '-',
+                    ultimoAcesso: 'Nunca',
+                    versaoApp: '-'
+                },
+                frequencia: {
+                    diasMes: '0/30',
+                    tempoMedio: '-',
+                    acessosSemana: '0',
+                    engajamento: 0
+                }
+            };
+            
+            if (id) {
+                const idx = usuarios.findIndex(u => u.id === id);
+                usuarios[idx] = { ...usuarios[idx], ...novo };
+            } else {
+                usuarios.unshift(novo);
+            }
+            
+            fecharModalUsuario();
+            carregarGradeUsuarios();
+            atualizarContadores();
+        }
+
+        // ========== AÇÕES RÁPIDAS ==========
+        function editarUsuarioAtual() {
+            if (!usuarioSelecionado) return;
+            document.getElementById('tituloModalUsuario').textContent = 'Editar Usuário';
+            document.getElementById('usuarioId').value = usuarioSelecionado.id;
+            document.getElementById('u-nome').value = usuarioSelecionado.nome;
+            document.getElementById('u-email').value = usuarioSelecionado.email;
+            document.getElementById('u-telefone').value = usuarioSelecionado.telefone || '';
+            document.getElementById('u-cidade').value = usuarioSelecionado.cidade;
+            document.getElementById('u-descricao').value = usuarioSelecionado.descricao;
+            document.getElementById('modalUsuario').style.display = 'flex';
+        }
+
+        function verHistoricoAtual() {
+            if (!usuarioSelecionado) return;
+            alert(`📝 Histórico de: ${usuarioSelecionado.nome}\n\n✅ Cadastrado em: ${usuarioSelecionado.dataCadastro}\n📱 Último acesso: ${usuarioSelecionado.dispositivo.ultimoAcesso}\n📊 Engajamento: ${usuarioSelecionado.frequencia.engajamento}%\n\nHistórico completo de acessos, ações e conexões disponível na aba "Auditoria".`);
+        }
+
+        function suspenderUsuarioAtual() {
+            if (!usuarioSelecionado) return;
+            if (confirm(`⏳ Suspender acesso de ${usuarioSelecionado.nome}?\n\nO usuário não conseguirá entrar temporariamente.`)) {
+                usuarioSelecionado.ativo = false;
+                carregarGradeUsuarios();
+                atualizarContadores();
+                alert('✅ Usuário suspenso com sucesso!');
+            }
+        }
+
+        function banirUsuarioAtual() {
+            if (!usuarioSelecionado) return;
+            if (confirm(`🚫 BANIR PERMANENTEMENTE:\n${usuarioSelecionado.nome}\n\nEssa ação é irreversível! Tem certeza?`)) {
+                usuarios = usuarios.filter(u => u.id !== usuarioSelecionado.id);
+                fecharPerfil();
+                carregarGradeUsuarios();
+                atualizarContadores();
+                alert('✅ Usuário banido e removido do sistema.');
+            }
+        }
+    </script>
+</body>
+</html>

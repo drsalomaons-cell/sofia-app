@@ -1,0 +1,30 @@
+[
+  {
+    "id": "rose",
+    "name": "Rosa",
+    "price": 10,
+    "tier": "common",
+    "emoji": "🌹"
+  },
+  {
+    "id": "star",
+    "name": "Estrela",
+    "price": 50,
+    "tier": "rare",
+    "emoji": "⭐"
+  },
+  {
+    "id": "crown",
+    "name": "Coroa",
+    "price": 200,
+    "tier": "epic",
+    "emoji": "👑"
+  },
+  {
+    "id": "diamond",
+    "name": "Diamante",
+    "price": 500,
+    "tier": "legendary",
+    "emoji": "💎"
+  }
+]

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SOFIA Capa 2 - Brilho e Graca | protected -->
+<!-- protected="true" -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 667" width="375" height="667">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="50%" stop-color="#DAA520"/>
+      <stop offset="100%" stop-color="#BA55D3"/>
+    </linearGradient>
+    <radialGradient id="glow2" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="375" height="667" fill="url(#bg2)"/>
+  <rect width="375" height="667" fill="url(#glow2)"/>
+  <text x="187" y="340" text-anchor="middle" font-family="Georgia, serif" font-size="42" font-weight="bold" fill="#FFFFFF" letter-spacing="6">SOFIA</text>
+  <text x="187" y="380" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#FFD700" letter-spacing="4">BRILHO E GRACA</text>
+</svg>

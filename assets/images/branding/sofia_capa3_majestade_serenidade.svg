@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SOFIA Capa 3 - Majestade e Serenidade | 1242x2208 base -->
+<!-- protected="true" -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1242 2208" width="1242" height="2208">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C8A2FF"/>
+      <stop offset="45%" stop-color="#7B2CBF"/>
+      <stop offset="100%" stop-color="#FFD700"/>
+    </linearGradient>
+    <radialGradient id="glow3" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1242" height="2208" fill="url(#bg3)"/>
+  <rect width="1242" height="2208" fill="url(#glow3)"/>
+  <circle cx="621" cy="900" r="280" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.5"/>
+  <circle cx="621" cy="900" r="200" fill="none" stroke="#FFD700" stroke-width="3" opacity="0.7"/>
+  <text x="621" y="920" text-anchor="middle" font-family="Georgia, serif" font-size="72" fill="#FFFFFF" font-weight="bold">SOFIA</text>
+  <text x="621" y="1000" text-anchor="middle" font-family="Georgia, serif" font-size="36" fill="#FFD700">Majestade e Serenidade</text>
+</svg>

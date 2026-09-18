@@ -1,0 +1,78 @@
+name: sofia
+description: "SOFIA - Social Platform"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  
+  # Estado e navegação
+  provider: ^6.1.1
+  go_router: ^13.0.0
+  
+  # Armazenamento local
+  shared_preferences: ^2.2.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  
+  # HTTP e API
+  dio: ^5.4.0
+  http: ^1.2.0
+  
+  # Utilitários
+  intl: ^0.20.2
+  flutter_dotenv: ^5.1.0
+  encrypt: ^5.0.3
+  crypto: ^3.0.3
+  flutter_secure_storage: ^9.0.0
+  
+  # UI e ícones
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  
+  # Chat e tempo real
+  socket_io_client: ^2.0.3+1
+  
+  # Permissões e mídia
+  permission_handler: ^11.3.1
+  camera: ^0.11.0+2
+  
+  # Reconhecimento facial
+  google_mlkit_face_detection: 0.13.2
+
+  # Proteção anti-captura (Android/iOS)
+  screen_protector: 1.4.2
+  
+  # Internacionalização
+  flutter_localizations:
+    sdk: flutter
+  easy_localization: ^3.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.8
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/images/branding/
+    - assets/icons/
+    - .env
+
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/images/app_icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/app_icon.png"

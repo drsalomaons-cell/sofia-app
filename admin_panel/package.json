@@ -1,0 +1,19 @@
+{
+  "name": "sofia-admin-panel",
+  "version": "1.0.0",
+  "description": "Painel Admin SOFIA — porta 3000",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "generate-covers": "node ../backend/scripts/generate_png_covers.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "sharp": "^0.33.5",
+    "socket.io": "^4.8.1",
+    "dotenv": "^16.4.5",
+    "pg": "^8.13.0",
+    "node-cron": "^3.0.3"
+  }
+}

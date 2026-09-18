@@ -1,0 +1,28 @@
+{
+  "activeCoverId": "capa3",
+  "updatedAt": "2026-09-18T04:10:16.299Z",
+  "covers": [
+    {
+      "id": "capa1",
+      "slug": "capa_1_luz_pureza",
+      "title": "Luz e Pureza",
+      "theme": "luz_pureza",
+      "status": "inativa"
+    },
+    {
+      "id": "capa2",
+      "slug": "capa_2_brilho_graca",
+      "title": "Brilho e Graça",
+      "theme": "brilho_graca",
+      "status": "inativa"
+    },
+    {
+      "id": "capa3",
+      "slug": "capa_3_majestade_serenidade",
+      "title": "Majestade e Serenidade",
+      "theme": "luz_pureza",
+      "status": "ativa"
+    }
+  ],
+  "signature": "5f7e195169176cc036d515c4c2f5bffa5f37f0281d812c21e6a343c380f8ea1a"
+}
