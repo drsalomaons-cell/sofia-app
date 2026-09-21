@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sofia/core/themes/app_theme.dart';
@@ -12,10 +14,12 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
+  Timer? _redirectTimer;
 
   @override
   void initState() {
@@ -25,30 +29,35 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.5,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 2), () async {
+    _redirectTimer = Timer(const Duration(seconds: 2), () async {
       if (!mounted) return;
       final authProvider = context.read<AuthProvider>();
       while (authProvider.isLoading && mounted) {
         await Future.delayed(const Duration(milliseconds: 100));
       }
       if (!mounted) return;
-      final initialRoute = authProvider.isAuthenticated ? AppRoutes.home : AppRoutes.login;
+      final initialRoute = authProvider.isAuthenticated
+          ? AppRoutes.home
+          : AppRoutes.login;
       Navigator.pushReplacementNamed(context, initialRoute);
     });
   }
 
   @override
   void dispose() {
+    _redirectTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -116,7 +125,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     ),
                     const SizedBox(height: 50),
                     const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.branco),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppTheme.branco,
+                      ),
                       strokeWidth: 3,
                     ),
                   ],

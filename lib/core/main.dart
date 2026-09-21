@@ -21,7 +21,9 @@ Future<void> bootstrap() async {
 }
 
 class SofiaApp extends StatefulWidget {
-  const SofiaApp({super.key});
+  const SofiaApp({super.key, this.initialRoute = AppRoutes.splash});
+
+  final String initialRoute;
 
   @override
   State<SofiaApp> createState() => _SofiaAppState();
@@ -67,7 +69,7 @@ class _SofiaAppState extends State<SofiaApp> {
             theme: AppTheme.themeForCover(coverId, isDark: false),
             darkTheme: AppTheme.themeForCover(coverId, isDark: true),
             themeMode: ThemeMode.system,
-            initialRoute: AppRoutes.splash,
+            initialRoute: widget.initialRoute,
             onGenerateRoute: AppRoutes.generateRoute,
             builder: (context, child) {
               return SofiaMobileShell(child: child ?? const SizedBox());
