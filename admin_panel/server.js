@@ -38,7 +38,7 @@ function getViewer(req) {
 function requireAdmin(req, res, next) {
   const viewer = getViewer(req);
   if (!viewer) {
-    return res.status(401).json({ sucesso: false, erro: 'Sessão expirada ou não autenticada.' });
+    return res.status(401).json({ sucesso: false, erro: 'SessÃ£o expirada ou nÃ£o autenticada.' });
   }
   req.viewer = viewer;
   next();
@@ -81,7 +81,7 @@ app.post('/api/admin/logout', requireAdmin, (req, res) => {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : null;
   if (token) sessions.delete(token);
-  res.json({ sucesso: true, mensagem: 'Sessão encerrada.' });
+  res.json({ sucesso: true, mensagem: 'SessÃ£o encerrada.' });
 });
 
 app.get('/api/admin/dashboard', requireAdmin, withState((req, res, estado) => {
@@ -143,7 +143,7 @@ app.put('/api/admin/admins/:id', requireAdmin, withState((req, res, estado) => {
   const targetId = req.params.id;
 
   if (viewer.nivel !== 'central' && viewer.id !== targetId) {
-    return res.status(403).json({ sucesso: false, erro: 'Você só pode alterar o próprio perfil.' });
+    return res.status(403).json({ sucesso: false, erro: 'VocÃª sÃ³ pode alterar o prÃ³prio perfil.' });
   }
 
   const resultado = atualizarAdmin(estado, {
@@ -168,7 +168,7 @@ app.post('/api/admin/admins/:id/redefinir-senha', requireAdmin, withState((req, 
   const targetId = req.params.id;
 
   if (viewer.nivel !== 'central' && viewer.id !== targetId) {
-    return res.status(403).json({ sucesso: false, erro: 'Você só pode redefinir a própria senha.' });
+    return res.status(403).json({ sucesso: false, erro: 'VocÃª sÃ³ pode redefinir a prÃ³pria senha.' });
   }
 
   const resultado = redefinirSenhaAdmin(estado, {
@@ -190,7 +190,7 @@ app.post('/api/admin/admins/:id/desativar', requireAdmin, withState((req, res, e
   const targetId = req.params.id;
 
   if (viewer.nivel !== 'central' && viewer.id !== targetId) {
-    return res.status(403).json({ sucesso: false, erro: 'Você só pode desativar o próprio acesso.' });
+    return res.status(403).json({ sucesso: false, erro: 'VocÃª sÃ³ pode desativar o prÃ³prio acesso.' });
   }
 
   const resultado = atualizarAdmin(estado, {
@@ -282,10 +282,9 @@ app.post('/api/admin/mensagens/:id/recuperar', requireAdmin, withState((req, res
 
 app.listen(PORTA, '0.0.0.0', () => {
   console.log('========================================');
-  console.log('?? PAINEL ADMIN SOFIA ATIVO');
-  console.log('?? Usuário central: admin@sofia.com');
-  console.log('?? Senha: 123456');
-  console.log('?? https://sofia-app-yhzb.onrender.com');
+  console.log('ğŸš€ PAINEL ADMIN SOFIA ATIVO');
+  console.log('ğŸ“§ UsuÃ¡rio central: admin@sofia.com');
+  console.log('ğŸ”‘ Senha: 123456');
+  console.log('ğŸŒ http://localhost:3000');
   console.log('========================================');
 });
-
