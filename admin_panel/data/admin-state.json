@@ -1,0 +1,68 @@
+{
+  "admins": [
+    {
+      "id": "central-1",
+      "nome": "Central",
+      "email": "admin@sofia.com",
+      "senha": "123456",
+      "nivel": "central",
+      "regiao": "todas",
+      "ativo": true
+    },
+    {
+      "id": "regional-1",
+      "nome": "Regional Sul",
+      "email": "regional@sofia.com",
+      "senha": "123456",
+      "nivel": "regional",
+      "regiao": "Brasil - LATAM",
+      "ativo": true
+    }
+  ],
+  "logs": [
+    {
+      "id": "log-1789878003087-3d6c59",
+      "usuarioId": "central-1",
+      "acao": "liberacao_moedas",
+      "detalhe": {
+        "solicitacaoId": "solicitacao-1789878003083",
+        "usuarioNome": "Joana",
+        "valorLiberado": 250,
+        "status": "aprovada"
+      },
+      "regiao": "todas",
+      "ip": "local",
+      "data": "2026-09-20T04:20:03.087Z"
+    },
+    {
+      "id": "log-1789878003083-1053cc",
+      "usuarioId": "system",
+      "acao": "solicitacao_moedas",
+      "detalhe": {
+        "usuarioId": "user-101",
+        "usuarioNome": "Joana",
+        "valor": 250,
+        "regiao": "Brasil - LATAM",
+        "status": "pendente"
+      },
+      "regiao": "Brasil - LATAM",
+      "ip": "local",
+      "data": "2026-09-20T04:20:03.083Z"
+    }
+  ],
+  "solicitacoes": [
+    {
+      "id": "solicitacao-1789878003083",
+      "usuarioId": "user-101",
+      "usuarioNome": "Joana",
+      "valor": 250,
+      "regiao": "Brasil - LATAM",
+      "status": "aprovada",
+      "createdAt": "2026-09-20T04:20:03.083Z",
+      "observacao": "Moedas liberadas",
+      "valorLiberado": 250,
+      "adminId": "central-1",
+      "updatedAt": "2026-09-20T04:20:03.087Z"
+    }
+  ]
+}

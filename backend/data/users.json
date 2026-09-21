@@ -1,0 +1,11 @@
+[
+  {
+    "id": "admin-sofia-001",
+    "name": "Admin Sofia",
+    "email": "admin@sofia.com.br",
+    "password": "$2b$10$HjbkWi5ep6KP7LZjpqnhN./42WS9RdcAALH/3MuI25KI6p4QZLGu6",
+    "isAdmin": true,
+    "role": "ADMIN_CENTRAL",
+    "createdAt": "2026-09-18T16:58:34.755Z"
+  }
+]

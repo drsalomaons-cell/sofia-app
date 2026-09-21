@@ -28,7 +28,7 @@ function mountApiRoutes(app) {
     if (store.isAdminAccount(user)) {
       return res.status(403).json({
         error: 'Acesso administrativo disponível apenas no painel web',
-        adminPanelUrl: 'http://localhost:3000/admin',
+        adminPanelUrl: 'https://sofia-app-yhzb.onrender.com/admin',
       });
     }
     res.json({ user: store.publicAppUser(user), token: user.id });
@@ -597,3 +597,4 @@ function mountApiRoutes(app) {
 }
 
 module.exports = { mountApiRoutes };
+
