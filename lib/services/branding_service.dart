@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sofia/services/api_client.dart';
 import 'package:sofia/services/branding_protection_service.dart';
 
 class SofiaCover {
@@ -54,13 +55,14 @@ class BrandingService extends ChangeNotifier {
       _coverCache[coverId]?[variant];
 
   CoverVariantContent? get activeSplash =>
-      coverVariant(_activeCoverId, 'splash') ?? coverVariant(_activeCoverId, 'background');
+      coverVariant(_activeCoverId, 'splash') ??
+      coverVariant(_activeCoverId, 'background');
 
   CoverVariantContent? get activeBackground =>
-      coverVariant(_activeCoverId, 'background') ?? coverVariant(_activeCoverId, 'splash');
+      coverVariant(_activeCoverId, 'background') ??
+      coverVariant(_activeCoverId, 'splash');
 
-  CoverVariantContent? get activeIcon =>
-      coverVariant(_activeCoverId, 'icon');
+  CoverVariantContent? get activeIcon => coverVariant(_activeCoverId, 'icon');
 
   String? get activeCoverSvg {
     final splash = activeSplash;
@@ -69,15 +71,19 @@ class BrandingService extends ChangeNotifier {
   }
 
   List<SofiaCover> get allCovers => BrandingProtectionService.coverPaths.entries
-      .map((e) => SofiaCover(
-            id: e.key,
-            title: BrandingProtectionService.coverTitles[e.key] ?? e.key,
-            assetPath: e.value,
-          ))
+      .map(
+        (e) => SofiaCover(
+          id: e.key,
+          title: BrandingProtectionService.coverTitles[e.key] ?? e.key,
+          assetPath: e.value,
+        ),
+      )
       .toList();
 
-  SofiaCover get activeCover =>
-      allCovers.firstWhere((c) => c.id == _activeCoverId, orElse: () => allCovers.first);
+  SofiaCover get activeCover => allCovers.firstWhere(
+    (c) => c.id == _activeCoverId,
+    orElse: () => allCovers.first,
+  );
 
   String get activeCoverPath => activeCover.assetPath;
 
@@ -101,12 +107,17 @@ class BrandingService extends ChangeNotifier {
     }
   }
 
-  Future<CoverVariantContent?> _fetchCoverContent(String coverId, String variant) async {
+  Future<CoverVariantContent?> _fetchCoverContent(
+    String coverId,
+    String variant,
+  ) async {
     try {
-      final response = await http.get(
-        Uri.parse('$_coverApiBase/$coverId/content?variant=$variant'),
-        headers: {'X-Sofia-Client': _clientToken},
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .get(
+            Uri.parse('$_coverApiBase/$coverId/content?variant=$variant'),
+            headers: {'X-Sofia-Client': _clientToken},
+          )
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode != 200) return null;
 
@@ -127,9 +138,15 @@ class BrandingService extends ChangeNotifier {
     if (contentType.contains('svg')) {
       try {
         final decoded = utf8.decode(base64Decode(content));
-        return CoverVariantContent(contentType: contentType, svgContent: decoded);
+        return CoverVariantContent(
+          contentType: contentType,
+          svgContent: decoded,
+        );
       } catch (_) {
-        return CoverVariantContent(contentType: contentType, svgContent: content);
+        return CoverVariantContent(
+          contentType: contentType,
+          svgContent: content,
+        );
       }
     }
     return CoverVariantContent(
@@ -141,18 +158,22 @@ class BrandingService extends ChangeNotifier {
   Future<void> _loadFromPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_prefKey);
-    if (saved != null && BrandingProtectionService.coverPaths.containsKey(saved)) {
+    if (saved != null &&
+        BrandingProtectionService.coverPaths.containsKey(saved)) {
       _activeCoverId = saved;
     }
   }
 
   Future<void> _syncFromAdminApi() async {
     try {
-      final response = await http.get(Uri.parse(_adminApiUrl)).timeout(const Duration(seconds: 3));
+      final response = await http
+          .get(Uri.parse(_adminApiUrl))
+          .timeout(const Duration(seconds: 3));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final coverId = data['activeCoverId'] as String?;
-        if (coverId != null && BrandingProtectionService.coverPaths.containsKey(coverId)) {
+        if (coverId != null &&
+            BrandingProtectionService.coverPaths.containsKey(coverId)) {
           _activeCoverId = coverId;
           await _saveToPreferences(coverId);
         }
@@ -163,7 +184,8 @@ class BrandingService extends ChangeNotifier {
   }
 
   Future<bool> setActiveCover(String coverId) async {
-    if (!BrandingProtectionService.coverPaths.containsKey(coverId)) return false;
+    if (!BrandingProtectionService.coverPaths.containsKey(coverId))
+      return false;
 
     try {
       await http.post(
@@ -194,14 +216,16 @@ class BrandingService extends ChangeNotifier {
   }
 
   Map<String, dynamic> toJson() => {
-        'activeCoverId': _activeCoverId,
-        'covers': allCovers
-            .map((c) => {
-                  'id': c.id,
-                  'title': c.title,
-                  'path': c.assetPath,
-                  'cached': _coverCache.containsKey(c.id),
-                })
-            .toList(),
-      };
+    'activeCoverId': _activeCoverId,
+    'covers': allCovers
+        .map(
+          (c) => {
+            'id': c.id,
+            'title': c.title,
+            'path': c.assetPath,
+            'cached': _coverCache.containsKey(c.id),
+          },
+        )
+        .toList(),
+  };
 }
