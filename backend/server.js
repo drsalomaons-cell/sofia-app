@@ -2,6 +2,7 @@
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -11,6 +12,8 @@ const io = socketIo(server, { cors: { origin: "*" } });
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'sofia_segredo_2026';
+const store = require('./data/store');
+const { mountApiRoutes } = require('./routes/api');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -68,17 +71,23 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log('❌ Cliente desconectado:', socket.id));
 });
 
-server.listen(PORT, '0.0.0.0', () => {
+store.initStore().then(() => {
+  mountApiRoutes(app);
+  server.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('╔══════════════════════════════════════════════════════════╗');
   console.log('║          ✅ SERVIDOR SOFIA — LIGADO COM SUCESSO!          ║');
   console.log('╠══════════════════════════════════════════════════════════╣');
-  console.log(`║  📡 Servidor:    http://192.168.0.248:${PORT}                ║`);
-  console.log(`║  🖥️  Painel Web:  http://192.168.0.248:${PORT}/admin         ║`);
+  console.log(`║  📡 Servidor:    http://localhost:${PORT}                ║`);
+  console.log(`║  🖥️  Painel Web:  http://localhost:${PORT}/admin         ║`);
   console.log('╠══════════════════════════════════════════════════════════╣');
   console.log('║  👤 LOGIN ADMINISTRADOR:                                 ║');
   console.log('║     E-mail: admin@sofia.com.br                           ║');
   console.log('║     Senha:  123456                                       ║');
   console.log('╚══════════════════════════════════════════════════════════╝');
   console.log('');
+});
+}).catch((error) => {
+  console.error('[SOFIA] Falha ao inicializar banco/rotas:', error);
+  process.exitCode = 1;
 });

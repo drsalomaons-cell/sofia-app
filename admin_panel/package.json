@@ -5,15 +5,18 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "postinstall": "npm --prefix ../backend install --omit=dev",
     "generate-covers": "node ../backend/scripts/generate_png_covers.js"
   },
   "dependencies": {
-    "express": "^4.21.0",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
-    "sharp": "^0.33.5",
-    "socket.io": "^4.8.1",
     "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.3",
+    "node-cron": "^4.6.0",
     "pg": "^8.13.0",
-    "node-cron": "^3.0.3"
+    "sharp": "^0.35.5",
+    "socket.io": "^4.8.1"
   }
 }

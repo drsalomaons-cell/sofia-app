@@ -1,0 +1,1 @@
+﻿Diretório exigido pelo pubspec.yaml. Adicionar aqui os ícones originais do app quando disponíveis; nenhum ícone foi inventado.

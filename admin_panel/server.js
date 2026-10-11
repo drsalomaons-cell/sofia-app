@@ -1,9 +1,18 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const path = require('path');
 const crypto = require('crypto');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+const store = require('../backend/data/store');
+const { mountApiRoutes } = require('../backend/routes/api');
 
 const app = express();
-const PORTA = 3000;
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
+const { initRoomSocket } = require('../backend/socket/rooms');
+initRoomSocket(io);
+const PORTA = Number(process.env.PORT || 3000);
 const sessions = new Map();
 
 app.use(express.json());
@@ -280,11 +289,20 @@ app.post('/api/admin/mensagens/:id/recuperar', requireAdmin, withState((req, res
   return res.json(resultado);
 }));
 
-app.listen(PORTA, '0.0.0.0', () => {
-  console.log('========================================');
-  console.log('🚀 PAINEL ADMIN SOFIA ATIVO');
-  console.log('📧 Usuário central: admin@sofia.com');
-  console.log('🔑 Senha: 123456');
-  console.log('🌐 http://localhost:3000');
-  console.log('========================================');
+app.get('/api/verificar', (_req, res) => {
+  res.json({ ok: true, mensagem: 'Servidor SOFIA funcionando!', porta: PORTA });
+});
+
+store.initStore().then(() => {
+  mountApiRoutes(app);
+  server.listen(PORTA, '0.0.0.0', () => {
+    console.log('========================================');
+    console.log('PAINEL ADMIN + API SOFIA ATIVOS');
+    console.log(`Porta: ${PORTA}`);
+    console.log('Rotas móveis /api/auth/login e /api/auth/register registradas');
+    console.log('========================================');
+  });
+}).catch((error) => {
+  console.error('[SOFIA] Falha ao inicializar armazenamento/rotas:', error);
+  process.exitCode = 1;
 });

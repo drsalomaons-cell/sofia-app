@@ -37,8 +37,8 @@ class CoverVariantContent {
 
 class BrandingService extends ChangeNotifier {
   static const String _prefKey = 'sofia_active_cover';
-  static const String _adminApiUrl = 'http://192.168.0.248:3000/api/branding';
-  static const String _coverApiBase = 'http://192.168.0.248:3000/api/covers';
+  static String get _adminApiUrl => '${ApiClient.baseUrl}/api/branding';
+  static String get _coverApiBase => '${ApiClient.baseUrl}/api/covers';
   static const String _clientToken = 'sofia-app-v1';
 
   static const variants = ['icon', 'splash', 'background'];

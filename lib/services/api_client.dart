@@ -10,13 +10,13 @@ class ApiClient {
       if (local != null && local.isNotEmpty) {
         return local.replaceAll(RegExp(r'/+$'), '');
       }
-      return 'http://192.168.0.248:3000';
+      return 'https://sofia-app-yhzb.onrender.com';
     }
     final fromEnv = dotenv.env['API_URL'];
     if (fromEnv != null && fromEnv.isNotEmpty) {
       return fromEnv.replaceAll(RegExp(r'/+$'), '');
     }
-    return 'http://192.168.0.248:3000';
+    return 'https://sofia-app-yhzb.onrender.com';
   }
 
   static String get clientToken => dotenv.env['SOFIA_CLIENT_TOKEN'] ?? 'sofia-app-v1';
