@@ -7,13 +7,14 @@ class SunlightRoomLayout {
   static const double designWidth = 390;
   static const double designHeight = 667;
 
-  /// Fator 0.55–0.75 conforme largura útil.
+  /// Escala responsiva sem reduzir as cadeiras a ícones minúsculos.
+  /// A largura continua a ser respeitada pelo LayoutBuilder do painel.
   static double compactScale(BuildContext context) {
     final shortest = MediaQuery.sizeOf(context).shortestSide;
-    if (shortest <= 360) return 0.55;
-    if (shortest <= 390) return 0.62;
-    if (shortest <= 430) return 0.68;
-    return 0.75;
+    if (shortest <= 360) return 0.88;
+    if (shortest <= 390) return 0.94;
+    if (shortest <= 430) return 1.0;
+    return 1.0;
   }
 
   static const int throneSeatIndex = 0;
