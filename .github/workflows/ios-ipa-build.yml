@@ -1,0 +1,47 @@
+name: Build Sofia iOS IPA (unsigned)
+
+on:
+  push:
+    branches:
+      - ci/ios-ipa-build
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter dependencies
+        run: flutter pub get
+
+      - name: Build iOS app without signing
+        run: flutter build ios --release --no-codesign
+
+      - name: Package IPA for sideloading workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p Payload
+          ditto build/ios/iphoneos/Runner.app Payload/Runner.app
+          /usr/bin/zip -qry Sofia-unsigned.ipa Payload
+          shasum -a 256 Sofia-unsigned.ipa
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sofia-unsigned-IPA
+          path: Sofia-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
