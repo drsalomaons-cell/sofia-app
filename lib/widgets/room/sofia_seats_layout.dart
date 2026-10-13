@@ -50,9 +50,9 @@ class SofiaSeatsLayout extends StatelessWidget {
     final count = chairCount.clamp(4, 20);
     final rows = rowSizes(count);
     final scale = SunlightRoomLayout.compactScale(context);
-    final throneSize = 54.0 * scale;
-    final seatSize = 42.0 * scale;
-    final gap = 8.0 * scale;
+    final throneSize = 64.0 * scale;
+    final seatSize = 50.0 * scale;
+    final gap = 7.0 * scale;
 
     return LayoutBuilder(
       builder: (context, constraints) {
