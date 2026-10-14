@@ -337,6 +337,36 @@ function mountApiRoutes(app) {
     res.json({ roomId: req.params.id, ranking });
   });
 
+  app.get('/api/rooms/:id/rocket-goal', (req, res) => {
+    const room = store.findRoom(req.params.id);
+    if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
+    const goal = room.rocketGoal || {
+      target: Number(economy.getConfig().roomGoalThreshold) || 400000,
+      current: 0,
+      contributors: {},
+      metAt: null,
+    };
+    const usersById = new Map(store.getUsers().map((user) => [user.id, user]));
+    const ranking = Object.entries(goal.contributors || {})
+      .map(([userId, totalCoins]) => ({
+        userId,
+        name: usersById.get(userId)?.name || 'Participante',
+        totalCoins: Number(totalCoins || 0),
+      }))
+      .sort((a, b) => b.totalCoins - a.totalCoins);
+    const target = Number(goal.target || 400000);
+    res.json({
+      roomId: room.id,
+      target,
+      current: Number(goal.current || 0),
+      progress: target > 0 ? Math.min(1, Number(goal.current || 0) / target) : 0,
+      met: !!goal.metAt || Number(goal.current || 0) >= target,
+      metAt: goal.metAt || null,
+      topContributor: ranking[0] || null,
+      ranking,
+    });
+  });
+
   app.post('/api/rooms', (req, res) => {
     const { name, description, theme, chairs, hostId, hostName, isPrivate, allowGuests, region, coverUrl } = req.body;
     const chairCount = Math.min(20, Math.max(4, chairs || 8));
@@ -357,6 +387,12 @@ function mountApiRoutes(app) {
       bannedUsers: [],
       region: region || 'América do Sul',
       earnings: 0,
+      rocketGoal: {
+        target: Number(economy.getConfig().roomGoalThreshold) || 400000,
+        current: 0,
+        contributors: {},
+        metAt: null,
+      },
       isActive: true,
       seats: store.buildSeats(chairCount, hostId, hostName),
       createdAt: new Date().toISOString(),
@@ -521,6 +557,27 @@ function mountApiRoutes(app) {
     store.saveUsers(users);
 
     store.addGiftLog({ from: senderId, to: recipientId, giftId, roomId, amount: gift.price });
+
+    // A meta do foguete é separada do chat. Todo presente elegível enviado na sala
+    // contribui para a meta; o ranking usa a contribuição acumulada por pessoa.
+    if (roomId) {
+      const rooms = store.getRooms();
+      const roomIndex = rooms.findIndex((room) => room.id === roomId);
+      if (roomIndex >= 0) {
+        const room = rooms[roomIndex];
+        const target = Number(room.rocketGoal?.target || economy.getConfig().roomGoalThreshold || 400000);
+        const goal = room.rocketGoal || { target, current: 0, contributors: {}, metAt: null };
+        goal.target = target;
+        goal.current = Number(goal.current || 0) + Number(gift.price || 0);
+        goal.contributors = goal.contributors || {};
+        goal.contributors[senderId] = Number(goal.contributors[senderId] || 0) + Number(gift.price || 0);
+        if (!goal.metAt && goal.current >= target) goal.metAt = new Date().toISOString();
+        room.rocketGoal = goal;
+        rooms[roomIndex] = room;
+        store.saveRooms(rooms);
+      }
+    }
+
     store.addTransaction({
       id: txId(),
       userId: senderId,

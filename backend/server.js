@@ -9,9 +9,11 @@ const bcrypt = require('bcryptjs');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: "*" } });
+const { initRoomSocket } = require('./socket/rooms');
+initRoomSocket(io);
 
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'sofia_segredo_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
 const store = require('./data/store');
 const { mountApiRoutes } = require('./routes/api');
 
@@ -40,6 +42,9 @@ app.post('/api/login', async (req, res) => {
   if (!usuario) return res.status(401).json({ erro: 'Usuário não encontrado' });
   if (!(await comparaSenha(password, usuario.password))) {
     return res.status(401).json({ erro: 'Senha incorreta' });
+  }
+  if (!JWT_SECRET) {
+    return res.status(503).json({ erro: 'Autenticação JWT indisponível: configure JWT_SECRET no ambiente.' });
   }
   const token = jwt.sign(
     { id: usuario.id, email: usuario.email, role: usuario.role },
@@ -81,9 +86,7 @@ store.initStore().then(() => {
   console.log(`║  📡 Servidor:    http://localhost:${PORT}                ║`);
   console.log(`║  🖥️  Painel Web:  http://localhost:${PORT}/admin         ║`);
   console.log('╠══════════════════════════════════════════════════════════╣');
-  console.log('║  👤 LOGIN ADMINISTRADOR:                                 ║');
-  console.log('║     E-mail: admin@sofia.com.br                           ║');
-  console.log('║     Senha:  123456                                       ║');
+  // Não imprimir credenciais de administrador no log de inicialização.
   console.log('╚══════════════════════════════════════════════════════════╝');
   console.log('');
 });

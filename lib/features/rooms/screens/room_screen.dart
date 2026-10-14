@@ -48,6 +48,7 @@ class _RoomScreenState extends State<RoomScreen> {
   List<SeatModel> _seats = [];
   List<String> _participants = [];
   List<Map<String, dynamic>> _giftRanking = [];
+  Map<String, dynamic>? _rocketGoal;
   bool _showChat = false;
   String? _roomId;
   String? _hostId;
@@ -102,6 +103,14 @@ class _RoomScreenState extends State<RoomScreen> {
       socket.onChat((msg) {
         if (mounted) setState(() => _messages.add(ChatMessage.fromMap(msg)));
       });
+      socket.onGift((gift) {
+        if (mounted) {
+          _loadRocketGoal();
+          _loadGiftRanking();
+        }
+      });
+      _loadRocketGoal();
+      _loadGiftRanking();
       socket.onRoomState((data) {
         final room = data['room'];
         if (room is Map && mounted) {
@@ -377,7 +386,9 @@ class _RoomScreenState extends State<RoomScreen> {
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(media.errorMessage ?? 'Não foi possível ativar o microfone.'),
+          content: Text(
+            media.errorMessage ?? 'Não foi possível ativar o microfone.',
+          ),
           backgroundColor: AppTheme.vermelho,
         ),
       );
@@ -418,11 +429,27 @@ class _RoomScreenState extends State<RoomScreen> {
     );
   }
 
+  Future<void> _loadRocketGoal() async {
+    final roomId = _roomId;
+    if (roomId == null) return;
+    final goal = await _roomService.getRocketGoal(roomId);
+    if (!mounted || goal == null) return;
+    setState(() => _rocketGoal = goal);
+  }
+
+  Future<void> _loadGiftRanking() async {
+    final roomId = _roomId;
+    if (roomId == null) return;
+    final ranking = await _roomService.getGiftRanking(roomId);
+    if (!mounted) return;
+    setState(() => _giftRanking = ranking);
+  }
+
   Future<void> _showRocketRanking() async {
     if (_roomId != null) {
-      final ranking = await _roomService.getGiftRanking(_roomId!);
+      await _loadGiftRanking();
+      await _loadRocketGoal();
       if (!mounted) return;
-      setState(() => _giftRanking = ranking);
     }
     if (!mounted) return;
     showModalBottomSheet<void>(
@@ -452,7 +479,7 @@ class _RoomScreenState extends State<RoomScreen> {
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Text(
-                      'Ainda não há presentes registrados nesta sala. O foguete não envia presentes: ele mostra este ranking.',
+                      'Ainda não há presentes registrados nesta sala. Envie presentes para avançar a meta do foguete e aparecer no ranking.',
                       textAlign: TextAlign.center,
                     ),
                   )
@@ -463,17 +490,24 @@ class _RoomScreenState extends State<RoomScreen> {
                       itemCount: _giftRanking.length,
                       itemBuilder: (context, index) {
                         final entry = _giftRanking[index];
-                        final name = entry['name']?.toString() ?? 'Participante';
+                        final name =
+                            entry['name']?.toString() ?? 'Participante';
                         final photo = entry['photoUrl']?.toString();
-                        final coins = (entry['totalCoins'] as num?)?.toInt() ?? 0;
-                        final gifts = (entry['giftCount'] as num?)?.toInt() ?? 0;
+                        final coins =
+                            (entry['totalCoins'] as num?)?.toInt() ?? 0;
+                        final gifts =
+                            (entry['giftCount'] as num?)?.toInt() ?? 0;
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundImage: photo != null && photo.isNotEmpty
                                 ? NetworkImage(photo)
                                 : null,
                             child: photo == null || photo.isEmpty
-                                ? Text(name.isEmpty ? '?' : name.characters.first.toUpperCase())
+                                ? Text(
+                                    name.isEmpty
+                                        ? '?'
+                                        : name.characters.first.toUpperCase(),
+                                  )
                                 : null,
                           ),
                           title: Text('${index + 1}. $name'),
@@ -544,6 +578,11 @@ class _RoomScreenState extends State<RoomScreen> {
     final user = auth.user;
     final level = user?.level ?? 1;
     final isHost = user?.id == _hostId;
+    final rocketCurrent = (_rocketGoal?['current'] as num?)?.toInt() ?? 0;
+    final rocketTarget = (_rocketGoal?['target'] as num?)?.toInt() ?? 400000;
+    final rocketProgress = rocketTarget > 0
+        ? (rocketCurrent / rocketTarget).clamp(0.0, 1.0)
+        : 0.0;
 
     return Scaffold(
       backgroundColor: SofiaPremiumTheme.darkBg,
@@ -562,6 +601,93 @@ class _RoomScreenState extends State<RoomScreen> {
                     roomName: widget.roomName,
                     roomTheme: widget.roomTheme,
                     onMenu: _showParticipants,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 2),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _showRocketRanking,
+                        icon: const Icon(Icons.emoji_events_outlined, size: 18),
+                        label: const Text('Ranking da sala'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.amarelo,
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+                    child: InkWell(
+                      onTap: _showRocketRanking,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.roxo.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.dourado.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  '🚀 Meta do foguete',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.dourado,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  '${rocketCurrent} / ${rocketTarget}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.branco,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: LinearProgressIndicator(
+                                value: rocketProgress,
+                                minHeight: 7,
+                                backgroundColor: AppTheme.branco.withValues(
+                                  alpha: 0.12,
+                                ),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  AppTheme.dourado,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _giftRanking.isNotEmpty
+                                  ? 'Maior contribuição: ${_giftRanking.first['name'] ?? 'Participante'}'
+                                  : 'Presentes enviados na sala contam para a meta',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.branco.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -669,27 +795,15 @@ class _RoomScreenState extends State<RoomScreen> {
                       },
                     ),
                   ),
-                  if (_showChat)
-                    RoomChatPanel(
-                      messages: _messages
-                          .map(
-                            (m) => RoomChatMessage(
-                              text: m.text,
-                              sender: m.sender,
-                              isSystem: m.isSystem,
-                            ),
-                          )
-                          .toList(),
-                      controller: _messageController,
-                      onSend: _sendMessage,
-                    ),
                   Consumer<MediaService>(
                     builder: (context, mediaService, _) {
                       return SunlightRoomBottomBar(
                         micActive: mediaService.isMicActive,
                         chatOpen: _showChat,
+                        roomMuted: mediaService.isRoomAudioMuted,
                         onMic: _toggleMic,
                         onChat: () => setState(() => _showChat = !_showChat),
+                        onRoomMute: mediaService.toggleRoomAudioMute,
                         onGift: () => showSofiaPremiumGiftPanel(
                           context,
                           roomId: _roomId,
@@ -704,39 +818,64 @@ class _RoomScreenState extends State<RoomScreen> {
                   ),
                 ],
               ),
-              Positioned(
-                right: 12,
-                bottom: 142,
-                child: FloatingActionButton.small(
-                  heroTag: 'sofia-room-gifts',
-                  backgroundColor: SofiaPremiumTheme.gold,
-                  foregroundColor: SofiaPremiumTheme.darkBg,
-                  tooltip: 'Abrir presentes',
-                  onPressed: () => showSofiaPremiumGiftPanel(
-                    context,
-                    roomId: _roomId,
-                    roomName: widget.roomName,
-                    isHost: isHost,
-                    participantCount: _participants.length,
-                    recipientId: _giftRecipientId,
+              if (_showChat)
+                Positioned(
+                  left: 8,
+                  right: 8,
+                  bottom: 78,
+                  child: RoomChatPanel(
+                    height: (MediaQuery.sizeOf(context).height * 0.34).clamp(
+                      210.0,
+                      300.0,
+                    ),
+                    messages: _messages
+                        .map(
+                          (m) => RoomChatMessage(
+                            text: m.text,
+                            sender: m.sender,
+                            isSystem: m.isSystem,
+                          ),
+                        )
+                        .toList(),
+                    controller: _messageController,
+                    onSend: _sendMessage,
                   ),
-                  child: const Icon(Icons.card_giftcard),
                 ),
-              ),
+              if (!_showChat)
+                Positioned(
+                  right: 12,
+                  bottom: 142,
+                  child: FloatingActionButton.small(
+                    heroTag: 'sofia-room-gifts',
+                    backgroundColor: SofiaPremiumTheme.gold,
+                    foregroundColor: SofiaPremiumTheme.darkBg,
+                    tooltip: 'Abrir presentes',
+                    onPressed: () => showSofiaPremiumGiftPanel(
+                      context,
+                      roomId: _roomId,
+                      roomName: widget.roomName,
+                      isHost: isHost,
+                      participantCount: _participants.length,
+                      recipientId: _giftRecipientId,
+                    ),
+                    child: const Icon(Icons.card_giftcard),
+                  ),
+                ),
               const SofiaGiftOverlay(),
-              SofiaPremiumVipGiftButton(
-                roomId: _roomId,
-                roomName: widget.roomName,
-                isHost: isHost,
-                participantCount: _participants.length,
-                onRocketTap: _showRocketRanking,
-                topContributorName: _giftRanking.isNotEmpty
-                    ? _giftRanking.first['name']?.toString()
-                    : null,
-                topContributorPhotoUrl: _giftRanking.isNotEmpty
-                    ? _giftRanking.first['photoUrl']?.toString()
-                    : null,
-              ),
+              if (!_showChat)
+                SofiaPremiumVipGiftButton(
+                  roomId: _roomId,
+                  roomName: widget.roomName,
+                  isHost: isHost,
+                  participantCount: _participants.length,
+                  onRocketTap: _showRocketRanking,
+                  topContributorName: _giftRanking.isNotEmpty
+                      ? _giftRanking.first['name']?.toString()
+                      : null,
+                  topContributorPhotoUrl: _giftRanking.isNotEmpty
+                      ? _giftRanking.first['photoUrl']?.toString()
+                      : null,
+                ),
             ],
           ),
         ),

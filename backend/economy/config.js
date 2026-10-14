@@ -18,7 +18,7 @@ const DEFAULT_CONFIG = {
   weeklyBonusPoolRate: 0.02,
   openingEventBonus: 100,
   openingEventXp: 25,
-  roomGoalThreshold: 500,
+  roomGoalThreshold: 400000,
   hostSalaryBase: 200,
   hostSalaryPerLevel: 50,
   pagbankSandbox: true,

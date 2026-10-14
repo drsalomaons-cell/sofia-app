@@ -52,7 +52,11 @@ class RoomService {
     throw Exception('Erro ao criar sala');
   }
 
-  Future<RoomModel?> joinRoom(String roomId, String userId, String userName) async {
+  Future<RoomModel?> joinRoom(
+    String roomId,
+    String userId,
+    String userName,
+  ) async {
     final data = await ApiClient.post('/api/rooms/$roomId/join', {
       'userId': userId,
       'userName': userName,
@@ -64,18 +68,25 @@ class RoomService {
   }
 
   Future<RoomModel?> leaveRoom(String roomId, String userId) async {
-    final data = await ApiClient.post('/api/rooms/$roomId/leave', {'userId': userId});
+    final data = await ApiClient.post('/api/rooms/$roomId/leave', {
+      'userId': userId,
+    });
     if (data != null && data['room'] != null) {
       return RoomModel.fromJson(Map<String, dynamic>.from(data['room'] as Map));
     }
     return null;
   }
 
-  Future<RoomModel?> takeSeat(String roomId, int seatIndex, String userId, String userName) async {
-    final data = await ApiClient.post('/api/rooms/$roomId/seats/$seatIndex/take', {
-      'userId': userId,
-      'userName': userName,
-    });
+  Future<RoomModel?> takeSeat(
+    String roomId,
+    int seatIndex,
+    String userId,
+    String userName,
+  ) async {
+    final data = await ApiClient.post(
+      '/api/rooms/$roomId/seats/$seatIndex/take',
+      {'userId': userId, 'userName': userName},
+    );
     if (data != null && data['room'] != null) {
       return RoomModel.fromJson(Map<String, dynamic>.from(data['room'] as Map));
     }
@@ -97,25 +108,49 @@ class RoomService {
     }
   }
 
-  Future<void> muteSeat(String roomId, int seatIndex, String actorId, bool muted) async {
+  Future<Map<String, dynamic>?> getRocketGoal(String roomId) async {
+    try {
+      final data = await ApiClient.get('/api/rooms/$roomId/rocket-goal');
+      if (data == null) return null;
+      return Map<String, dynamic>.from(data);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> muteSeat(
+    String roomId,
+    int seatIndex,
+    String actorId,
+    bool muted,
+  ) async {
     await ApiClient.post('/api/rooms/$roomId/seats/$seatIndex/mute', {
       'actorId': actorId,
       'muted': muted,
     });
   }
 
-  Future<RoomModel?> lockSeat(String roomId, int seatIndex, String actorId, bool locked) async {
-    final data = await ApiClient.post('/api/rooms/$roomId/seats/$seatIndex/lock', {
-      'actorId': actorId,
-      'locked': locked,
-    });
+  Future<RoomModel?> lockSeat(
+    String roomId,
+    int seatIndex,
+    String actorId,
+    bool locked,
+  ) async {
+    final data = await ApiClient.post(
+      '/api/rooms/$roomId/seats/$seatIndex/lock',
+      {'actorId': actorId, 'locked': locked},
+    );
     if (data != null && data['room'] != null) {
       return RoomModel.fromJson(Map<String, dynamic>.from(data['room'] as Map));
     }
     return null;
   }
 
-  Future<void> banUser(String roomId, String targetUserId, String actorId) async {
+  Future<void> banUser(
+    String roomId,
+    String targetUserId,
+    String actorId,
+  ) async {
     await ApiClient.post('/api/rooms/$roomId/ban', {
       'targetUserId': targetUserId,
       'actorId': actorId,
