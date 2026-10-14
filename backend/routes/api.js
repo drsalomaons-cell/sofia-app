@@ -299,8 +299,11 @@ function mountApiRoutes(app) {
   // ── Rooms ──
   app.get('/api/rooms', (req, res) => {
     const region = req.query.region;
+    const type = req.query.type === 'video' ? 'video' : (req.query.type === 'voice' ? 'voice' : null);
     let rooms = store.getRooms().filter((r) => r.isActive);
     if (region) rooms = rooms.filter((r) => r.region === region);
+    // Salas antigas sem roomType permanecem como rádio para compatibilidade.
+    if (type) rooms = rooms.filter((r) => (r.roomType || 'voice') === type);
     res.json({ rooms });
   });
 
@@ -368,13 +371,14 @@ function mountApiRoutes(app) {
   });
 
   app.post('/api/rooms', (req, res) => {
-    const { name, description, theme, chairs, hostId, hostName, isPrivate, allowGuests, region, coverUrl } = req.body;
+    const { name, description, theme, roomType, chairs, hostId, hostName, isPrivate, allowGuests, region, coverUrl } = req.body;
     const chairCount = Math.min(20, Math.max(4, chairs || 8));
     const room = {
       id: `room-${txId()}`,
       name,
       description: description || '',
       theme,
+      roomType: roomType === 'video' ? 'video' : 'voice',
       coverUrl: coverUrl || '',
       chairs: chairCount,
       currentUsers: 1,
