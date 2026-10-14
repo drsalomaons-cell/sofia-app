@@ -82,6 +82,21 @@ class RoomService {
     return null;
   }
 
+  Future<List<Map<String, dynamic>>> getGiftRanking(String roomId) async {
+    try {
+      final data = await ApiClient.get('/api/rooms/$roomId/gift-ranking');
+      final rows = data?['ranking'];
+      if (rows is! List) return const [];
+      return rows
+          .whereType<Map>()
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList();
+    } catch (_) {
+      // Backend antigo/offline: não inventar contribuições.
+      return const [];
+    }
+  }
+
   Future<void> muteSeat(String roomId, int seatIndex, String actorId, bool muted) async {
     await ApiClient.post('/api/rooms/$roomId/seats/$seatIndex/mute', {
       'actorId': actorId,

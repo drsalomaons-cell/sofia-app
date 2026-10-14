@@ -75,6 +75,29 @@ class FaceRecognitionService extends ChangeNotifier {
     }
   }
 
+  /// Detecta rosto em uma foto capturada pela câmera frontal.
+  /// Isso confirma presença de rosto, não identidade biométrica.
+  Future<bool> detectFaceFromFile(String imagePath) async {
+    try {
+      _errorMessage = null;
+      final inputImage = InputImage.fromFilePath(imagePath);
+      final faces = await _faceDetector.processImage(inputImage);
+      if (faces.isEmpty) {
+        _errorMessage = 'Nenhum rosto detectado. Centralize o rosto e tente novamente.';
+        notifyListeners();
+        return false;
+      }
+      _lastFaceData = {'faceCount': faces.length};
+      _errorMessage = 'Rosto detectado. A comparação com uma identidade cadastrada ainda não está configurada.';
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Falha na detecção facial: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Verifica se o rosto é válido para cadastro
   Future<bool> validateFaceForRegistration(CameraImage image) async {
     try {

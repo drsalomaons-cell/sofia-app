@@ -47,6 +47,7 @@ class _RoomScreenState extends State<RoomScreen> {
   final List<ChatMessage> _messages = [];
   List<SeatModel> _seats = [];
   List<String> _participants = [];
+  List<Map<String, dynamic>> _giftRanking = [];
   bool _showChat = false;
   String? _roomId;
   String? _hostId;
@@ -57,7 +58,14 @@ class _RoomScreenState extends State<RoomScreen> {
   void initState() {
     super.initState();
     _roomId = widget.roomId;
-    _messages.add(ChatMessage(text: 'Bem-vindos à sala!', sender: 'Sistema', time: _now(), isSystem: true));
+    _messages.add(
+      ChatMessage(
+        text: 'Bem-vindos à sala!',
+        sender: 'Sistema',
+        time: _now(),
+        isSystem: true,
+      ),
+    );
     _initRoom();
   }
 
@@ -73,11 +81,17 @@ class _RoomScreenState extends State<RoomScreen> {
 
     final socket = context.read<SocketService>();
     if (_roomId != null) {
-      await context.read<RoomProvider>().joinRoom(_roomId!, user.id, userName: user.name);
+      await context.read<RoomProvider>().joinRoom(
+        _roomId!,
+        user.id,
+        userName: user.name,
+      );
       final room = await _roomService.getRoomById(_roomId!);
       if (room != null && mounted) {
         setState(() {
-          _seats = room.seats.isNotEmpty ? room.seats : _roomService.parseSeats(room);
+          _seats = room.seats.isNotEmpty
+              ? room.seats
+              : _roomService.parseSeats(room);
           _participants = room.participants;
           _hostId = room.hostId;
           _roomEarnings = room.earnings;
@@ -92,11 +106,18 @@ class _RoomScreenState extends State<RoomScreen> {
         final room = data['room'];
         if (room is Map && mounted) {
           setState(() {
-            _seats = (room['seats'] as List?)
-                    ?.map((s) => SeatModel.fromJson(Map<String, dynamic>.from(s as Map)))
+            _seats =
+                (room['seats'] as List?)
+                    ?.map(
+                      (s) => SeatModel.fromJson(
+                        Map<String, dynamic>.from(s as Map),
+                      ),
+                    )
                     .toList() ??
                 _seats;
-            _participants = List<String>.from(room['participants'] ?? _participants);
+            _participants = List<String>.from(
+              room['participants'] ?? _participants,
+            );
           });
         }
       });
@@ -105,7 +126,15 @@ class _RoomScreenState extends State<RoomScreen> {
       });
     } else {
       setState(() {
-        _seats = List.generate(widget.chairCount, (i) => SeatModel(index: i, userId: i == 0 ? user.id : null, userName: i == 0 ? user.name : null, role: i == 0 ? 'owner' : 'participant'));
+        _seats = List.generate(
+          widget.chairCount,
+          (i) => SeatModel(
+            index: i,
+            userId: i == 0 ? user.id : null,
+            userName: i == 0 ? user.name : null,
+            role: i == 0 ? 'owner' : 'participant',
+          ),
+        );
         _participants = [user.id];
       });
     }
@@ -115,10 +144,21 @@ class _RoomScreenState extends State<RoomScreen> {
     media.bindRtcEmitter((type, data) {
       if (_roomId != null) socket.emitRtcSignal(_roomId!, data);
     });
-    if (_roomId != null) {
-      await media.autoEnableMedia(roomId: _roomId, userId: user.id);
-    } else {
-      await media.autoEnableMedia();
+    final mediaReady = _roomId != null
+        ? await media.autoEnableMedia(
+            roomId: _roomId,
+            userId: user.id,
+            userName: user.name,
+          )
+        : await media.autoEnableMedia();
+    if (!mediaReady && mounted && media.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(media.errorMessage!),
+          duration: const Duration(seconds: 5),
+          backgroundColor: AppTheme.vermelho,
+        ),
+      );
     }
   }
 
@@ -138,12 +178,20 @@ class _RoomScreenState extends State<RoomScreen> {
     if (!allowed) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mensagem bloqueada pela moderação'), backgroundColor: AppTheme.vermelho),
+          const SnackBar(
+            content: Text('Mensagem bloqueada pela moderação'),
+            backgroundColor: AppTheme.vermelho,
+          ),
         );
       }
       return;
     }
-    final msg = ChatMessage(text: text, sender: auth.user?.name ?? 'Você', time: _now(), isSystem: false);
+    final msg = ChatMessage(
+      text: text,
+      sender: auth.user?.name ?? 'Você',
+      time: _now(),
+      isSystem: false,
+    );
     setState(() => _messages.add(msg));
     if (_roomId != null) {
       context.read<SocketService>().sendChat(_roomId!, msg.toMap());
@@ -155,11 +203,16 @@ class _RoomScreenState extends State<RoomScreen> {
     final auth = context.read<AuthProvider>();
     final user = auth.user;
     if (user == null) return;
-    final seat = index < _seats.length ? _seats[index] : SeatModel(index: index);
+    final seat = index < _seats.length
+        ? _seats[index]
+        : SeatModel(index: index);
     if (seat.isLocked && seat.userId != user.id) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cadeira bloqueada'), backgroundColor: AppTheme.vermelho),
+          const SnackBar(
+            content: Text('Cadeira bloqueada'),
+            backgroundColor: AppTheme.vermelho,
+          ),
         );
       }
       return;
@@ -168,13 +221,19 @@ class _RoomScreenState extends State<RoomScreen> {
       setState(() {
         _seats = _seats.map((s) {
           if (s.userId == user.id) return s.copyWith(clearUser: true);
-          if (s.index == index) return s.copyWith(userId: user.id, userName: user.name);
+          if (s.index == index)
+            return s.copyWith(userId: user.id, userName: user.name);
           return s;
         }).toList();
       });
       return;
     }
-    final room = await _roomService.takeSeat(_roomId!, index, user.id, user.name);
+    final room = await _roomService.takeSeat(
+      _roomId!,
+      index,
+      user.id,
+      user.name,
+    );
     if (room != null && mounted) {
       setState(() => _seats = room.seats);
     }
@@ -183,7 +242,9 @@ class _RoomScreenState extends State<RoomScreen> {
   bool _canModerateRoom(String? userId) {
     if (userId == null) return false;
     if (userId == _hostId) return true;
-    return _seats.any((s) => s.userId == userId && (s.role == 'owner' || s.role == 'moderator'));
+    return _seats.any(
+      (s) => s.userId == userId && (s.role == 'owner' || s.role == 'moderator'),
+    );
   }
 
   Future<void> _handleSeatAction(int index, SofiaSeatAction action) async {
@@ -197,23 +258,41 @@ class _RoomScreenState extends State<RoomScreen> {
       case SofiaSeatAction.unlock:
         final locked = action == SofiaSeatAction.lock;
         if (_roomId != null) {
-          final room = await _roomService.lockSeat(_roomId!, index, user.id, locked);
+          final room = await _roomService.lockSeat(
+            _roomId!,
+            index,
+            user.id,
+            locked,
+          );
           if (room != null && mounted) setState(() => _seats = room.seats);
         } else if (mounted) {
           setState(() {
-            _seats = _seats.map((s) => s.index == index ? s.copyWith(isLocked: locked) : s).toList();
+            _seats = _seats
+                .map((s) => s.index == index ? s.copyWith(isLocked: locked) : s)
+                .toList();
           });
         }
         break;
       case SofiaSeatAction.mute:
       case SofiaSeatAction.unmute:
         if (_roomId != null) {
-          await _roomService.muteSeat(_roomId!, index, user.id, action == SofiaSeatAction.mute);
+          await _roomService.muteSeat(
+            _roomId!,
+            index,
+            user.id,
+            action == SofiaSeatAction.mute,
+          );
           final room = await _roomService.getRoomById(_roomId!);
           if (room != null && mounted) setState(() => _seats = room.seats);
         } else if (mounted) {
           setState(() {
-            _seats = _seats.map((s) => s.index == index ? s.copyWith(isMuted: action == SofiaSeatAction.mute) : s).toList();
+            _seats = _seats
+                .map(
+                  (s) => s.index == index
+                      ? s.copyWith(isMuted: action == SofiaSeatAction.mute)
+                      : s,
+                )
+                .toList();
           });
         }
         break;
@@ -227,24 +306,49 @@ class _RoomScreenState extends State<RoomScreen> {
       case SofiaSeatAction.promote:
         if (mounted) {
           setState(() {
-            _seats = _seats.map((s) => s.index == index ? s.copyWith(role: 'moderator') : s).toList();
+            _seats = _seats
+                .map(
+                  (s) => s.index == index ? s.copyWith(role: 'moderator') : s,
+                )
+                .toList();
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Usuário promovido a moderador'), backgroundColor: AppTheme.verde),
+            const SnackBar(
+              content: Text('Usuário promovido a moderador'),
+              backgroundColor: AppTheme.verde,
+            ),
           );
         }
         break;
       case SofiaSeatAction.invite:
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Convite enviado aos seguidores'), backgroundColor: AppTheme.roxo),
+            const SnackBar(
+              content: Text('Convite enviado aos seguidores'),
+              backgroundColor: AppTheme.roxo,
+            ),
           );
         }
         break;
     }
   }
 
-  SeatModel _seatAt(int index) => index < _seats.length ? _seats[index] : SeatModel(index: index);
+  SeatModel _seatAt(int index) =>
+      index < _seats.length ? _seats[index] : SeatModel(index: index);
+
+  String? get _giftRecipientId {
+    final currentUserId = context.read<AuthProvider>().user?.id;
+    if (_hostId != null && _hostId != currentUserId) return _hostId;
+    for (final seat in _seats) {
+      if (seat.userId != null && seat.userId != currentUserId) {
+        return seat.userId;
+      }
+    }
+    for (final participantId in _participants) {
+      if (participantId != currentUserId) return participantId;
+    }
+    return null;
+  }
 
   void _onSeatLongPress(int index, SeatModel seat) {
     final auth = context.read<AuthProvider>();
@@ -264,14 +368,27 @@ class _RoomScreenState extends State<RoomScreen> {
 
   Future<void> _toggleMic() async {
     final media = context.read<MediaService>();
+    bool ok = true;
     if (media.isMicActive) {
       await media.stopAudioStream();
     } else {
-      await media.startAudioStream();
+      ok = await media.startAudioStream();
+    }
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(media.errorMessage ?? 'Não foi possível ativar o microfone.'),
+          backgroundColor: AppTheme.vermelho,
+        ),
+      );
     }
     final user = context.read<AuthProvider>().user;
     if (_roomId != null && user != null) {
-      context.read<SocketService>().emitMicToggle(_roomId!, user.id, media.isMicActive);
+      context.read<SocketService>().emitMicToggle(
+        _roomId!,
+        user.id,
+        media.isMicActive,
+      );
     }
   }
 
@@ -281,13 +398,109 @@ class _RoomScreenState extends State<RoomScreen> {
       builder: (_) => ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Participantes (${_participants.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            'Participantes (${_participants.length})',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 12),
-          ..._participants.map((id) => ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.person)),
-                title: Text(id == context.read<AuthProvider>().user?.id ? 'Você' : 'Usuário $id'),
-              )),
+          ..._participants.map(
+            (id) => ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.person)),
+              title: Text(
+                id == context.read<AuthProvider>().user?.id
+                    ? 'Você'
+                    : 'Usuário $id',
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showRocketRanking() async {
+    if (_roomId != null) {
+      final ranking = await _roomService.getGiftRanking(_roomId!);
+      if (!mounted) return;
+      setState(() => _giftRanking = ranking);
+    }
+    if (!mounted) return;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.7,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '🚀 Ranking de contribuições',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  widget.roomName,
+                  style: const TextStyle(color: AppTheme.cinzaMedio),
+                ),
+                const SizedBox(height: 12),
+                if (_giftRanking.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      'Ainda não há presentes registrados nesta sala. O foguete não envia presentes: ele mostra este ranking.',
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _giftRanking.length,
+                      itemBuilder: (context, index) {
+                        final entry = _giftRanking[index];
+                        final name = entry['name']?.toString() ?? 'Participante';
+                        final photo = entry['photoUrl']?.toString();
+                        final coins = (entry['totalCoins'] as num?)?.toInt() ?? 0;
+                        final gifts = (entry['giftCount'] as num?)?.toInt() ?? 0;
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundImage: photo != null && photo.isNotEmpty
+                                ? NetworkImage(photo)
+                                : null,
+                            child: photo == null || photo.isEmpty
+                                ? Text(name.isEmpty ? '?' : name.characters.first.toUpperCase())
+                                : null,
+                          ),
+                          title: Text('${index + 1}. $name'),
+                          subtitle: Text('$gifts presentes enviados'),
+                          trailing: Text(
+                            '$coins 🪙',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                if (_giftRanking.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'No topo do foguete: ${_giftRanking.first['name'] ?? 'Participante'}',
+                      style: const TextStyle(
+                        color: AppTheme.dourado,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -299,21 +512,27 @@ class _RoomScreenState extends State<RoomScreen> {
       await context.read<RoomProvider>().leaveRoom(_roomId!, auth.user!.id);
       final participantCount = _participants.length.clamp(1, 20);
       final totalAmount = 10.0 * participantCount;
-      final isHost = auth.user!.id == _hostId ||
-          _seats.any((s) => s.userId == auth.user!.id && (s.role == 'owner' || s.role == 'host'));
+      final isHost =
+          auth.user!.id == _hostId ||
+          _seats.any(
+            (s) =>
+                s.userId == auth.user!.id &&
+                (s.role == 'owner' || s.role == 'host'),
+          );
       final roomGoalMet = (_roomEarnings + totalAmount) >= 500;
-      final isOpeningEvent = _roomCreatedAt != null &&
+      final isOpeningEvent =
+          _roomCreatedAt != null &&
           DateTime.now().difference(_roomCreatedAt!).inHours < 72 &&
           participantCount >= 5;
       await context.read<WalletProvider>().addEarning(
-            roomId: _roomId!,
-            roomName: widget.roomName,
-            totalAmount: totalAmount,
-            participantCount: participantCount,
-            isHost: isHost,
-            roomGoalMet: roomGoalMet,
-            isOpeningEvent: isOpeningEvent,
-          );
+        roomId: _roomId!,
+        roomName: widget.roomName,
+        totalAmount: totalAmount,
+        participantCount: participantCount,
+        isHost: isHost,
+        roomGoalMet: roomGoalMet,
+        isOpeningEvent: isOpeningEvent,
+      );
     }
     await context.read<MediaService>().disposeAll();
     if (mounted) Navigator.pop(context);
@@ -329,7 +548,9 @@ class _RoomScreenState extends State<RoomScreen> {
     return Scaffold(
       backgroundColor: SofiaPremiumTheme.darkBg,
       body: Container(
-        decoration: const BoxDecoration(gradient: SofiaPremiumTheme.roomBackground),
+        decoration: const BoxDecoration(
+          gradient: SofiaPremiumTheme.roomBackground,
+        ),
         child: SafeArea(
           bottom: false,
           child: Stack(
@@ -343,22 +564,72 @@ class _RoomScreenState extends State<RoomScreen> {
                     onMenu: _showParticipants,
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(color: AppTheme.dourado, borderRadius: BorderRadius.circular(10)),
-                          child: Text('Nível $level', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.preto)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.dourado,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            'Nível $level',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.preto,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        Icon(Icons.people_outline, color: AppTheme.branco.withValues(alpha: 0.8), size: 18),
-                        Text(' ${_participants.length}', style: const TextStyle(color: AppTheme.branco, fontWeight: FontWeight.bold, fontSize: 13)),
+                        Icon(
+                          Icons.people_outline,
+                          color: AppTheme.branco.withValues(alpha: 0.8),
+                          size: 18,
+                        ),
+                        Text(
+                          ' ${_participants.length}',
+                          style: const TextStyle(
+                            color: AppTheme.branco,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: AppTheme.vermelho, borderRadius: BorderRadius.circular(8)),
-                          child: const Row(children: [Icon(Icons.circle, size: 6, color: AppTheme.branco), SizedBox(width: 4), Text('AO VIVO', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.branco))]),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.vermelho,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.circle,
+                                size: 6,
+                                color: AppTheme.branco,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'AO VIVO',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.branco,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -368,18 +639,26 @@ class _RoomScreenState extends State<RoomScreen> {
                       builder: (context, mediaService, _) {
                         return Column(
                           children: [
-                            if (mediaService.isCameraActive && mediaService.cameraController != null)
+                            if (mediaService.isCameraActive &&
+                                mediaService.cameraController != null)
                               SizedBox(
-                                height: 64,
+                                height:
+                                    (MediaQuery.sizeOf(context).height * 0.22)
+                                        .clamp(140.0, 220.0),
+                                width: double.infinity,
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
-                                  child: CameraPreview(mediaService.cameraController!),
+                                  child: CameraPreview(
+                                    mediaService.cameraController!,
+                                  ),
                                 ),
                               ),
                             Expanded(
                               child: SofiaSeatsLayout(
                                 seats: _seats,
-                                chairCount: _seats.isNotEmpty ? _seats.length : widget.chairCount,
+                                chairCount: _seats.isNotEmpty
+                                    ? _seats.length
+                                    : widget.chairCount,
                                 currentUserId: auth.user?.id,
                                 onSeatTap: (index, seat) => _takeSeat(index),
                                 onSeatLongPress: _onSeatLongPress,
@@ -392,7 +671,15 @@ class _RoomScreenState extends State<RoomScreen> {
                   ),
                   if (_showChat)
                     RoomChatPanel(
-                      messages: _messages.map((m) => RoomChatMessage(text: m.text, sender: m.sender, isSystem: m.isSystem)).toList(),
+                      messages: _messages
+                          .map(
+                            (m) => RoomChatMessage(
+                              text: m.text,
+                              sender: m.sender,
+                              isSystem: m.isSystem,
+                            ),
+                          )
+                          .toList(),
                       controller: _messageController,
                       onSend: _sendMessage,
                     ),
@@ -409,6 +696,7 @@ class _RoomScreenState extends State<RoomScreen> {
                           roomName: widget.roomName,
                           isHost: isHost,
                           participantCount: _participants.length,
+                          recipientId: _giftRecipientId,
                         ),
                         onLeave: _leaveRoom,
                       );
@@ -416,12 +704,38 @@ class _RoomScreenState extends State<RoomScreen> {
                   ),
                 ],
               ),
+              Positioned(
+                right: 12,
+                bottom: 142,
+                child: FloatingActionButton.small(
+                  heroTag: 'sofia-room-gifts',
+                  backgroundColor: SofiaPremiumTheme.gold,
+                  foregroundColor: SofiaPremiumTheme.darkBg,
+                  tooltip: 'Abrir presentes',
+                  onPressed: () => showSofiaPremiumGiftPanel(
+                    context,
+                    roomId: _roomId,
+                    roomName: widget.roomName,
+                    isHost: isHost,
+                    participantCount: _participants.length,
+                    recipientId: _giftRecipientId,
+                  ),
+                  child: const Icon(Icons.card_giftcard),
+                ),
+              ),
               const SofiaGiftOverlay(),
               SofiaPremiumVipGiftButton(
                 roomId: _roomId,
                 roomName: widget.roomName,
                 isHost: isHost,
                 participantCount: _participants.length,
+                onRocketTap: _showRocketRanking,
+                topContributorName: _giftRanking.isNotEmpty
+                    ? _giftRanking.first['name']?.toString()
+                    : null,
+                topContributorPhotoUrl: _giftRanking.isNotEmpty
+                    ? _giftRanking.first['photoUrl']?.toString()
+                    : null,
               ),
             ],
           ),
@@ -437,14 +751,24 @@ class ChatMessage {
   final String time;
   final bool isSystem;
 
-  ChatMessage({required this.text, required this.sender, required this.time, this.isSystem = false});
+  ChatMessage({
+    required this.text,
+    required this.sender,
+    required this.time,
+    this.isSystem = false,
+  });
 
-  Map<String, dynamic> toMap() => {'text': text, 'sender': sender, 'time': time, 'isSystem': isSystem};
+  Map<String, dynamic> toMap() => {
+    'text': text,
+    'sender': sender,
+    'time': time,
+    'isSystem': isSystem,
+  };
 
   factory ChatMessage.fromMap(Map<String, dynamic> m) => ChatMessage(
-        text: m['text']?.toString() ?? '',
-        sender: m['sender']?.toString() ?? '',
-        time: m['time']?.toString() ?? '',
-        isSystem: m['isSystem'] == true,
-      );
+    text: m['text']?.toString() ?? '',
+    sender: m['sender']?.toString() ?? '',
+    time: m['time']?.toString() ?? '',
+    isSystem: m['isSystem'] == true,
+  );
 }

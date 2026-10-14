@@ -35,6 +35,14 @@ project(":screen_protector") {
     }
 }
 
+project(":zego_express_engine") {
+    afterEvaluate {
+        extensions.configure<com.android.build.gradle.LibraryExtension> {
+            compileSdk = 36
+        }
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

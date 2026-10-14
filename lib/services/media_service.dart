@@ -15,6 +15,7 @@ class MediaService extends ChangeNotifier {
   bool _isLiveConnected = false;
   String? _errorMessage;
   String? _roomId;
+  String? _zegoUserId;
   void Function(String type, Map<String, dynamic> data)? _rtcEmitter;
 
   bool get isCameraActive => _isCameraActive;
@@ -112,6 +113,21 @@ class MediaService extends ChangeNotifier {
       final hasPermission = await requestPermissions();
       if (!hasPermission) return false;
 
+      if (_roomId == null || !_zego.isJoined) {
+        _errorMessage = 'Áudio ao vivo indisponível: a sala RTC não está conectada.';
+        _isMicActive = false;
+        notifyListeners();
+        return false;
+      }
+
+      final userId = _zegoUserId;
+      if (userId == null || !await _zego.publishAudio(userId: userId)) {
+        _errorMessage = 'Não foi possível publicar o áudio na sala.';
+        _isMicActive = false;
+        notifyListeners();
+        return false;
+      }
+
       _isMicActive = true;
       _emitRtc('mic-on', {'active': true});
       notifyListeners();
@@ -125,6 +141,7 @@ class MediaService extends ChangeNotifier {
   }
 
   Future<void> stopAudioStream() async {
+    await _zego.stopAudio();
     _isMicActive = false;
     _emitRtc('mic-off', {'active': false});
     notifyListeners();
@@ -176,45 +193,66 @@ class MediaService extends ChangeNotifier {
 
   CameraController? get cameraController => _cameraController;
 
-  Future<bool> joinLiveRoom({required String roomId, required String userId}) async {
+  Future<bool> joinLiveRoom({
+    required String roomId,
+    required String userId,
+    String? userName,
+  }) async {
     _roomId = roomId;
-    final ok = await _zego.fetchRoomToken(userId: userId, roomId: roomId);
-    if (!ok) {
-      _errorMessage = 'Falha ao obter token ZEGO/RTC';
+    _zegoUserId = userId;
+    final tokenFetched = await _zego.fetchRoomToken(userId: userId, roomId: roomId);
+    if (!tokenFetched) {
+      _errorMessage = 'Não foi possível obter o token ZEGO/RTC.';
+      await initializeCamera();
       notifyListeners();
       return false;
     }
+
+    final connected = await _zego.joinAudioRoom(
+      userId: userId,
+      userName: userName ?? userId,
+      roomId: roomId,
+    );
     await initializeCamera();
-    await startAudioStream();
+    if (!connected) {
+      _errorMessage = 'A câmera local está disponível, mas o áudio remoto exige ZEGO configurado no servidor.';
+      _isMicActive = false;
+      _isLiveConnected = false;
+      notifyListeners();
+      return false;
+    }
+
     _emitRtc('join', {
       'roomId': roomId,
       'userId': userId,
-      'token': _zego.token,
-      'appId': _zego.appId,
       'sandbox': _zego.sandbox,
     });
     _isLiveConnected = true;
     notifyListeners();
-    return true;
+    return startAudioStream();
   }
 
-  Future<bool> autoEnableMedia({String? roomId, String? userId}) async {
+  Future<bool> autoEnableMedia({
+    String? roomId,
+    String? userId,
+    String? userName,
+  }) async {
     if (roomId != null && userId != null) {
-      return joinLiveRoom(roomId: roomId, userId: userId);
+      return joinLiveRoom(roomId: roomId, userId: userId, userName: userName);
     }
     final hasPermission = await requestPermissions();
     if (!hasPermission) return false;
-    await initializeCamera();
-    await startAudioStream();
-    return _isCameraActive || _isMicActive;
+    return initializeCamera();
   }
 
   Future<void> disposeAll() async {
     _emitRtc('leave', {'roomId': _roomId});
     await stopCamera();
     await stopAudioStream();
+    await _zego.leaveAudioRoom();
     _isLiveConnected = false;
     _roomId = null;
+    _zegoUserId = null;
   }
 
   void _emitRtc(String type, Map<String, dynamic> data) {

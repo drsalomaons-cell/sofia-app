@@ -1,7 +1,7 @@
 name: sofia
 description: "SOFIA - Social Platform"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+6004
 
 environment:
   sdk: ^3.12.1
@@ -41,7 +41,7 @@ dependencies:
   
   # Permissões e mídia
   permission_handler: ^11.3.1
-  camera: ^0.11.0+2
+  camera: ^0.12.1
   
   # Reconhecimento facial
   google_mlkit_face_detection: 0.13.2
@@ -53,6 +53,12 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   easy_localization: ^3.0.5
+  image_picker: ^1.2.4
+  zego_express_engine: ^3.25.0
+  path_provider: ^2.1.6
+
+dependency_overrides:
+  camera_avfoundation: ^0.11.0+1
 
 dev_dependencies:
   flutter_test:

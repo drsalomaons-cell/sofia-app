@@ -50,9 +50,9 @@ class SofiaSeatsLayout extends StatelessWidget {
     final count = chairCount.clamp(4, 20);
     final rows = rowSizes(count);
     final scale = SunlightRoomLayout.compactScale(context);
-    final throneSize = 54.0 * scale;
-    final seatSize = 42.0 * scale;
-    final gap = 8.0 * scale;
+    final throneSize = 76.0 * scale;
+    final seatSize = 64.0 * scale;
+    final gap = 5.0 * scale;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -67,14 +67,18 @@ class SofiaSeatsLayout extends StatelessWidget {
                 size: throneSize,
                 isThrone: true,
                 isLocal: _seatAt(0).userId == currentUserId,
-                isMicLive: _seatAt(0).userId == currentUserId && !_seatAt(0).isMuted,
+                isMicLive:
+                    _seatAt(0).userId == currentUserId && !_seatAt(0).isMuted,
                 onTap: () => onSeatTap(0, _seatAt(0)),
-                onLongPress: onSeatLongPress != null ? () => onSeatLongPress!(0, _seatAt(0)) : null,
+                onLongPress: onSeatLongPress != null
+                    ? () => onSeatLongPress!(0, _seatAt(0))
+                    : null,
               ),
               SizedBox(height: gap),
               ...rows.asMap().entries.map((entry) {
                 final rowCount = entry.value;
-                final startIndex = 1 + rows.take(entry.key).fold<int>(0, (a, b) => a + b);
+                final startIndex =
+                    1 + rows.take(entry.key).fold<int>(0, (a, b) => a + b);
                 return Padding(
                   padding: EdgeInsets.only(bottom: gap),
                   child: Row(
@@ -89,9 +93,12 @@ class SofiaSeatsLayout extends StatelessWidget {
                           size: seatSize,
                           isThrone: false,
                           isLocal: seat.userId == currentUserId,
-                          isMicLive: seat.userId == currentUserId && !seat.isMuted,
+                          isMicLive:
+                              seat.userId == currentUserId && !seat.isMuted,
                           onTap: () => onSeatTap(idx, seat),
-                          onLongPress: onSeatLongPress != null ? () => onSeatLongPress!(idx, seat) : null,
+                          onLongPress: onSeatLongPress != null
+                              ? () => onSeatLongPress!(idx, seat)
+                              : null,
                         ),
                       );
                     }),
@@ -144,10 +151,10 @@ class _SeatBubble extends StatelessWidget {
     final color = isThrone
         ? AppTheme.dourado
         : isLocal
-            ? AppTheme.lilas
-            : occupied
-                ? AppTheme.roxo
-                : AppTheme.cinzaMedio;
+        ? AppTheme.lilas
+        : occupied
+        ? AppTheme.roxo
+        : AppTheme.cinzaMedio;
 
     return GestureDetector(
       onTap: onTap,
@@ -168,25 +175,47 @@ class _SeatBubble extends StatelessWidget {
               ],
             ),
             border: Border.all(
-              color: isMicLive ? AppTheme.dourado : color.withValues(alpha: 0.85),
+              color: isMicLive
+                  ? AppTheme.dourado
+                  : color.withValues(alpha: 0.85),
               width: isThrone ? 2.5 : 1.5,
             ),
             boxShadow: isMicLive
-                ? [BoxShadow(color: AppTheme.dourado.withValues(alpha: 0.45), blurRadius: 12)]
+                ? [
+                    BoxShadow(
+                      color: AppTheme.dourado.withValues(alpha: 0.45),
+                      blurRadius: 12,
+                    ),
+                  ]
                 : null,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(isThrone ? '👑' : (occupied ? '🎤' : '＋'), style: TextStyle(fontSize: isThrone ? 20 : 15)),
+              Text(
+                isThrone ? '👑' : (occupied ? '🎤' : '＋'),
+                style: TextStyle(fontSize: isThrone ? 24 : 20),
+              ),
               if (isThrone)
-                const Text('TRONO', style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: AppTheme.dourado, letterSpacing: 0.5)),
+                const Text(
+                  'TRONO',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.dourado,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              if (_roleLabel.isNotEmpty && occupied) const SizedBox(height: 1),
               if (_roleLabel.isNotEmpty && occupied)
-                Text(_roleLabel, style: const TextStyle(fontSize: 7, color: AppTheme.branco)),
+                Text(
+                  _roleLabel,
+                  style: const TextStyle(fontSize: 9, color: AppTheme.branco),
+                ),
               if (occupied && seat.userName != null)
                 Text(
                   seat.userName!.split(' ').first,
-                  style: const TextStyle(fontSize: 7, color: AppTheme.branco),
+                  style: const TextStyle(fontSize: 9, color: AppTheme.branco),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

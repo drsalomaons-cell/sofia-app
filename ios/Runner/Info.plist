@@ -26,6 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>A Sofia usa a câmera para a live e para capturar sua foto de perfil.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>A Sofia usa o microfone para transmitir sua voz nas salas e lives.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>A Sofia permite escolher uma foto da sua galeria para o perfil.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

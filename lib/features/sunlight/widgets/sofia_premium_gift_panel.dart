@@ -14,6 +14,7 @@ void showSofiaPremiumGiftPanel(
   required String roomName,
   required bool isHost,
   required int participantCount,
+  String? recipientId,
 }) {
   showModalBottomSheet<void>(
     context: context,
@@ -24,6 +25,7 @@ void showSofiaPremiumGiftPanel(
       roomName: roomName,
       isHost: isHost,
       participantCount: participantCount,
+      recipientId: recipientId,
     ),
   );
 }
@@ -33,12 +35,14 @@ class _SofiaGiftPanelSheet extends StatelessWidget {
   final String roomName;
   final bool isHost;
   final int participantCount;
+  final String? recipientId;
 
   const _SofiaGiftPanelSheet({
     required this.roomId,
     required this.roomName,
     required this.isHost,
     required this.participantCount,
+    required this.recipientId,
   });
 
   @override
@@ -97,6 +101,7 @@ class _SofiaGiftPanelSheet extends StatelessWidget {
                         roomName: roomName,
                         isHost: isHost,
                         participantCount: participantCount,
+                        recipientId: recipientId,
                       ),
                     ),
                   ),
@@ -116,6 +121,7 @@ class _GiftTile extends StatelessWidget {
   final String roomName;
   final bool isHost;
   final int participantCount;
+  final String? recipientId;
 
   const _GiftTile({
     required this.gift,
@@ -123,6 +129,7 @@ class _GiftTile extends StatelessWidget {
     required this.roomName,
     required this.isHost,
     required this.participantCount,
+    required this.recipientId,
   });
 
   Color get _accent => switch (gift.tier) {
@@ -138,7 +145,15 @@ class _GiftTile extends StatelessWidget {
     return GestureDetector(
       onTap: () async {
         Navigator.pop(context);
-        await sendSofiaGift(context, gift, roomId: roomId, roomName: roomName, isHost: isHost, participantCount: participantCount);
+        await sendSofiaGift(
+          context,
+          gift,
+          roomId: roomId,
+          roomName: roomName,
+          recipientId: recipientId,
+          isHost: isHost,
+          participantCount: participantCount,
+        );
       },
       child: SunlightNeonGlow(
         color: _accent,
