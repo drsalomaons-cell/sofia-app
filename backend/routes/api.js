@@ -15,6 +15,18 @@ function txId() {
   return crypto.randomBytes(8).toString('hex');
 }
 
+const APP_GIFT_CATALOG = [
+  { id: 'rose', name: 'Rosa', price: 10, tier: 'common', emoji: '🌹' },
+  { id: 'heart', name: 'Coração', price: 30, tier: 'common', emoji: '💖' },
+  { id: 'star', name: 'Estrela', price: 50, tier: 'rare', emoji: '⭐' },
+  { id: 'frame', name: 'Moldura', price: 120, tier: 'rare', emoji: '🖼️' },
+  { id: 'crown', name: 'Coroa', price: 200, tier: 'epic', emoji: '👑' },
+  { id: 'car', name: 'Carro VIP', price: 350, tier: 'epic', emoji: '🚗' },
+  { id: 'rocket', name: 'Foguete', price: 500, tier: 'legendary', emoji: '🚀' },
+  { id: 'trophy', name: 'Troféu', price: 800, tier: 'legendary', emoji: '🏆' },
+  { id: 'diamond', name: 'Diamante', price: 1000, tier: 'mythic', emoji: '💎' },
+];
+
 function mountApiRoutes(app) {
   loadEconomyConfig();
 
@@ -298,6 +310,33 @@ function mountApiRoutes(app) {
     res.json({ room });
   });
 
+  // Ranking real de contribuições por presentes enviados nesta sala.
+  app.get('/api/rooms/:id/gift-ranking', (req, res) => {
+    const room = store.findRoom(req.params.id);
+    if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
+    const totals = new Map();
+    for (const gift of store.getGiftLog().filter((entry) => entry.roomId === req.params.id)) {
+      const senderId = gift.from || gift.senderId;
+      if (!senderId) continue;
+      const current = totals.get(senderId) || { userId: senderId, totalCoins: 0, giftCount: 0 };
+      current.totalCoins += Number(gift.amount || 0);
+      current.giftCount += 1;
+      totals.set(senderId, current);
+    }
+    const usersById = new Map(store.getUsers().map((user) => [user.id, user]));
+    const ranking = [...totals.values()]
+      .map((entry) => {
+        const user = usersById.get(entry.userId);
+        return {
+          ...entry,
+          name: user?.name || 'Participante',
+          photoUrl: user?.photoUrl || null,
+        };
+      })
+      .sort((a, b) => b.totalCoins - a.totalCoins);
+    res.json({ roomId: req.params.id, ranking });
+  });
+
   app.post('/api/rooms', (req, res) => {
     const { name, description, theme, chairs, hostId, hostName, isPrivate, allowGuests, region, coverUrl } = req.body;
     const chairCount = Math.min(20, Math.max(4, chairs || 8));
@@ -448,12 +487,12 @@ function mountApiRoutes(app) {
 
   // ── Gifts ──
   app.get('/api/gifts', (_req, res) => {
-    res.json({ gifts: store.getGiftCatalog() });
+    res.json({ gifts: APP_GIFT_CATALOG });
   });
 
   app.post('/api/gifts/send', (req, res) => {
     const { senderId, recipientId, giftId, roomId } = req.body;
-    const gift = store.getGiftCatalog().find((g) => g.id === giftId);
+    const gift = APP_GIFT_CATALOG.find((g) => g.id === giftId);
     if (!gift) return res.status(404).json({ error: 'Presente não encontrado' });
 
     const analysis = fraud.analyzeTransaction({
