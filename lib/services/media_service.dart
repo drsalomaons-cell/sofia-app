@@ -13,6 +13,7 @@ class MediaService extends ChangeNotifier {
   bool _isCameraActive = false;
   bool _isMicActive = false;
   bool _isLiveConnected = false;
+  bool _isRoomAudioMuted = false;
   String? _errorMessage;
   String? _roomId;
   String? _zegoUserId;
@@ -21,10 +22,13 @@ class MediaService extends ChangeNotifier {
   bool get isCameraActive => _isCameraActive;
   bool get isMicActive => _isMicActive;
   bool get isLiveConnected => _isLiveConnected;
+  bool get isRoomAudioMuted => _isRoomAudioMuted;
   String? get errorMessage => _errorMessage;
   ZegoService get zego => _zego;
 
-  void bindRtcEmitter(void Function(String type, Map<String, dynamic> data) emitter) {
+  void bindRtcEmitter(
+    void Function(String type, Map<String, dynamic> data) emitter,
+  ) {
     _rtcEmitter = emitter;
   }
 
@@ -114,7 +118,8 @@ class MediaService extends ChangeNotifier {
       if (!hasPermission) return false;
 
       if (_roomId == null || !_zego.isJoined) {
-        _errorMessage = 'Áudio ao vivo indisponível: a sala RTC não está conectada.';
+        _errorMessage =
+            'Áudio ao vivo indisponível: a sala RTC não está conectada.';
         _isMicActive = false;
         notifyListeners();
         return false;
@@ -145,6 +150,25 @@ class MediaService extends ChangeNotifier {
     _isMicActive = false;
     _emitRtc('mic-off', {'active': false});
     notifyListeners();
+  }
+
+  Future<void> toggleRoomAudioMute() async {
+    if (!_zego.isJoined) {
+      _errorMessage =
+          'O áudio da sala só pode ser silenciado após conectar ao RTC.';
+      notifyListeners();
+      return;
+    }
+    final muted = !_isRoomAudioMuted;
+    try {
+      await _zego.muteRemoteAudio(muted);
+      _isRoomAudioMuted = muted;
+      _errorMessage = null;
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Não foi possível alterar o áudio recebido: $e';
+      notifyListeners();
+    }
   }
 
   Future<void> stopCamera() async {
@@ -180,7 +204,11 @@ class MediaService extends ChangeNotifier {
         );
       }
       await _cameraController!.dispose();
-      _cameraController = CameraController(newCamera, ResolutionPreset.medium, enableAudio: false);
+      _cameraController = CameraController(
+        newCamera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
       await _cameraController!.initialize();
       notifyListeners();
       return true;
@@ -200,7 +228,10 @@ class MediaService extends ChangeNotifier {
   }) async {
     _roomId = roomId;
     _zegoUserId = userId;
-    final tokenFetched = await _zego.fetchRoomToken(userId: userId, roomId: roomId);
+    final tokenFetched = await _zego.fetchRoomToken(
+      userId: userId,
+      roomId: roomId,
+    );
     if (!tokenFetched) {
       _errorMessage = 'Não foi possível obter o token ZEGO/RTC.';
       await initializeCamera();
@@ -215,7 +246,8 @@ class MediaService extends ChangeNotifier {
     );
     await initializeCamera();
     if (!connected) {
-      _errorMessage = 'A câmera local está disponível, mas o áudio remoto exige ZEGO configurado no servidor.';
+      _errorMessage =
+          'A câmera local está disponível, mas o áudio remoto exige ZEGO configurado no servidor.';
       _isMicActive = false;
       _isLiveConnected = false;
       notifyListeners();
