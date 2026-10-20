@@ -25,7 +25,6 @@
     "id": "admin-central",
     "name": "Admin Central SOFIA",
     "email": "admin@sofia.app",
-    "password": "Sofia@2026",
     "phone": "(11) 90000-0001",
     "gender": "Outro",
     "interestedIn": "Todos",
@@ -39,15 +38,16 @@
     "isRegionalAdmin": false,
     "role": "ADMIN_CENTRAL",
     "createdAt": "2026-06-25T21:42:06.981Z",
-    "passwordHash": "scrypt:1b255773bfa8c5f6a514cf7e6d40d033:1da3bbb46f0eb82441999974ae13e7040915194501852bebaedb0a16756d7952f448b5e3a34263350334658938a8260d60f097022fe36dc471067ad4f5195671",
+    "passwordHash": "scrypt:a54c950539b5fbb497c52489d6f393c1:678665eabea0cd021230e06d0fd5c0d9f9928699ea01e632bf4eec5abc350267ed707ad0334f636427cc41229e74024004d796ec6b339cdc3d52119d4cde5e5b",
     "adminLevel": "ADMIN_CENTRAL",
-    "updatedAt": "2026-06-26T01:03:21.542Z"
+    "updatedAt": "2026-10-20T10:23:39.826Z",
+    "coins": 0,
+    "diamonds": 0
   },
   {
     "id": "admin-regional-sul",
     "name": "Admin Regional — América do Sul",
     "email": "regional.sul@sofia.app",
-    "password": "Sofia@2026",
     "phone": "(11) 90000-0099",
     "gender": "Outro",
     "interestedIn": "Todos",
@@ -61,9 +61,9 @@
     "isRegionalAdmin": true,
     "role": "ADMIN_REGIONAL",
     "createdAt": "2026-06-25T21:42:07.000Z",
-    "passwordHash": "scrypt:a5bc76b6f7133f994f6c870ed0fc5a5d:a1432dfdcdd4253ef38d5e9415da6871ca5241be2686485d6eaa1b673a0648c375b23dea8829821f19156a51f5ca8cae1a3ccc11b8d5942149b1d5f1413f7d9d",
+    "passwordHash": "scrypt:2f1e16f8858009e592fb902cbfd688c7:7f3247563f9344cb6848810e96e484a365174763004ba9c82404cf6b816d89d972cc6a10299d51d182771b720c11eb81b729d1ce5599129a9b06ab1bfe9e40a2",
     "adminLevel": "ADMIN_REGIONAL",
-    "updatedAt": "2026-09-18T04:19:51.145Z"
+    "updatedAt": "2026-10-20T10:23:39.862Z"
   },
   {
     "id": "user-demo",
@@ -97,7 +97,7 @@
     "id": "admin-regional-norte",
     "name": "Admin Regional — América do Norte",
     "email": "regional.norte@sofia.app",
-    "passwordHash": "scrypt:87ba1b8889d20dcfdec3276eb37bdfd2:f9e415dbdf4a700b54e06fc9636107896bcfd4a19b86efcdcda35e31028bd4b3c5c0fa027f69b8b62404d5dad233317733584cd96f9dff40d707f49ebebccf2c",
+    "passwordHash": "scrypt:8332bab095796734dbc6253ffe11e5c7:45bee9ae9af5c15147edb09b32aeedfc59fe6f59c22c35bcac8cc46482fc20c924d6d6e0e97fd45da8fbb38431afba12a1dcd7e5fc8f159d81413af838595a92",
     "phone": "(11) 90000-0099",
     "gender": "Outro",
     "interestedIn": "Todos",
@@ -112,13 +112,13 @@
     "role": "ADMIN_REGIONAL",
     "adminLevel": "ADMIN_REGIONAL",
     "createdAt": "2026-06-25T22:35:39.289Z",
-    "updatedAt": "2026-09-18T04:19:51.221Z"
+    "updatedAt": "2026-10-20T10:23:39.900Z"
   },
   {
     "id": "admin-regional-asia",
     "name": "Admin Regional — Ásia",
     "email": "regional.asia@sofia.app",
-    "passwordHash": "scrypt:f44bf3054892a1374bbdc3ac73cae5e2:e410ffa44965f7875f66f0cc76c0929752be4e47d89ea4bb32e466d06f58841c55222f1b53362e908d5747c09fdb052cc722962ea26f9f0230c00bd9cb1a5ffa",
+    "passwordHash": "scrypt:25fce5e2a9a66a8c333f69597a81acd4:b13b60567541c428000a25e0cea8a5002c210b8d2b90e969f5ea31eefe7c3cc7ae6bdda6b755c622c54d30f9fb001ebde6387dd209f935f2d6e86ae8a2be9a8d",
     "phone": "(11) 90000-0099",
     "gender": "Outro",
     "interestedIn": "Todos",
@@ -133,13 +133,13 @@
     "role": "ADMIN_REGIONAL",
     "adminLevel": "ADMIN_REGIONAL",
     "createdAt": "2026-06-25T22:35:39.390Z",
-    "updatedAt": "2026-09-18T04:19:51.300Z"
+    "updatedAt": "2026-10-20T10:23:39.937Z"
   },
   {
     "id": "admin-regional-africa",
     "name": "Admin Regional — África",
     "email": "regional.africa@sofia.app",
-    "passwordHash": "scrypt:4fabd83361b58fcb9ecb9373eaeb2afa:199f9437034e6bd1348ed39f4b376c2b7cf136d8745ff8512acd27b17e93463fb66374d420c5c62faf427497a1811e0b17b3925b79a702091f1a6d9bd61cb896",
+    "passwordHash": "scrypt:9c694bd67baffd776c415a14dec11b51:445d55a01cd6f6fc5c7d1ceea141892f8b4d581d12e2faa263c049868c5a54c9d43b8a1de00fcdb9a6794d638d0db2069e80e1076ff94ec16d0783520e664cb5",
     "phone": "(11) 90000-0099",
     "gender": "Outro",
     "interestedIn": "Todos",
@@ -154,7 +154,7 @@
     "role": "ADMIN_REGIONAL",
     "adminLevel": "ADMIN_REGIONAL",
     "createdAt": "2026-06-25T22:35:39.487Z",
-    "updatedAt": "2026-09-18T04:19:51.372Z"
+    "updatedAt": "2026-10-20T10:23:39.975Z"
   },
   {
     "id": "admin-sofia-com",

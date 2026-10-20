@@ -3,7 +3,12 @@ const path = require('path');
 const pg = require('../db/postgres');
 
 const DATA_DIR = path.join(__dirname, 'data');
-const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_CENTRAL_PASSWORD || 'Sofia@2026';
+const ADMIN_CENTRAL_PASSWORD = process.env.ADMIN_CENTRAL_PASSWORD;
+if (!ADMIN_CENTRAL_PASSWORD || ADMIN_CENTRAL_PASSWORD.length < 12) {
+  console.error('[FATAL] ADMIN_CENTRAL_PASSWORD ausente/curta (<12). Defina no .env.');
+  process.exit(1);
+}
+const DEFAULT_ADMIN_PASSWORD = ADMIN_CENTRAL_PASSWORD;
 
 let pgCache = { users: null, rooms: null, transactions: null, gift_catalog: null, gift_log: null };
 
@@ -250,7 +255,9 @@ function findUser(id) {
 }
 
 function findUserByEmail(email) {
-  return getUsers().find((u) => u.email === email) || null;
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  if (!normalizedEmail) return null;
+  return getUsers().find((u) => String(u.email || '').trim().toLowerCase() === normalizedEmail) || null;
 }
 
 function verifyUserPassword(user, plain) {
