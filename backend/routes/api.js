@@ -1,4 +1,4 @@
-﻿const crypto = require('crypto');
+const crypto = require('crypto');
 const store = require('../data/store');
 const { hashPassword } = require('../auth/password');
 const economy = require('../economy/engine');
@@ -241,11 +241,24 @@ function mountApiRoutes(app) {
     });
   });
 
-  app.post('/api/wallet/earning', (req, res) => {
-    const {
-      userId, roomId, roomName, totalAmount, source = 'room_time',
-      participantCount = 1, isHost = false, roomGoalMet = false, isOpeningEvent = false,
-    } = req.body;
+  app.post('/api/wallet/earning', requireAuth, requireSelf('userId'), (req, res) => {
+    const { userId, roomId, totalAmount, source = 'room_time' } = req.body;
+    // P0-2c: validar no servidor e ignorar valores de bonus enviados pelo cliente.
+    if (!roomId) return res.status(400).json({ error: 'roomId obrigatorio' });
+    const _room = store.findRoom(roomId);
+    if (!_room) return res.status(404).json({ error: 'Sala nao encontrada' });
+    if (!Array.isArray(_room.participants) || !_room.participants.includes(userId)) {
+      return res.status(403).json({ error: 'Usuario nao esta nesta sala' });
+    }
+    if (typeof totalAmount !== 'number' || !Number.isFinite(totalAmount) || totalAmount <= 0 || totalAmount > 10000) {
+      return res.status(400).json({ error: 'totalAmount invalido (0 < x <= 10000)' });
+    }
+    const isHost = _room.hostId === userId;
+    const participantCount = Math.max(1, _room.participants.length);
+    const roomGoalMet = Boolean(_room.rocketGoal && _room.rocketGoal.metAt);
+    // Sem estado server-side de evento de abertura, o cliente nao pode liberar esse bonus.
+    const isOpeningEvent = false;
+    const roomName = _room.name || 'Sala';
     const users = store.getUsers();
     const idx = users.findIndex((u) => u.id === userId);
     if (idx < 0) return res.status(404).json({ error: 'Usuário não encontrado' });
