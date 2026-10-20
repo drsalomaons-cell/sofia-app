@@ -385,8 +385,11 @@ function mountApiRoutes(app) {
     });
   });
 
-  app.post('/api/rooms', (req, res) => {
-    const { name, description, theme, roomType, chairs, hostId, hostName, isPrivate, allowGuests, region, coverUrl } = req.body;
+  app.post('/api/rooms', requireAuth, (req, res) => {
+    const { name, description, theme, roomType, chairs, isPrivate, allowGuests, region, coverUrl } = req.body;
+    const hostId = req.user.id;
+    const hostUser = store.findUser(hostId);
+    const hostName = hostUser?.name || hostId;
     const chairCount = Math.min(20, Math.max(4, chairs || 8));
     const room = {
       id: `room-${txId()}`,
@@ -422,8 +425,10 @@ function mountApiRoutes(app) {
     res.json({ room });
   });
 
-  app.post('/api/rooms/:id/join', (req, res) => {
-    const { userId, userName } = req.body;
+  app.post('/api/rooms/:id/join', requireAuth, (req, res) => {
+    const userId = req.user.id;
+    const joiningUser = store.findUser(userId);
+    const userName = joiningUser?.name || userId;
     const rooms = store.getRooms();
     const idx = rooms.findIndex((r) => r.id === req.params.id);
     if (idx < 0) return res.status(404).json({ error: 'Sala não encontrada' });
@@ -440,8 +445,8 @@ function mountApiRoutes(app) {
     res.json({ room });
   });
 
-  app.post('/api/rooms/:id/leave', (req, res) => {
-    const { userId } = req.body;
+  app.post('/api/rooms/:id/leave', requireAuth, (req, res) => {
+    const userId = req.user.id;
     const rooms = store.getRooms();
     const idx = rooms.findIndex((r) => r.id === req.params.id);
     if (idx < 0) return res.status(404).json({ error: 'Sala não encontrada' });
@@ -456,8 +461,10 @@ function mountApiRoutes(app) {
     res.json({ room });
   });
 
-  app.post('/api/rooms/:id/seats/:seatIndex/take', (req, res) => {
-    const { userId, userName } = req.body;
+  app.post('/api/rooms/:id/seats/:seatIndex/take', requireAuth, (req, res) => {
+    const userId = req.user.id;
+    const seatingUser = store.findUser(userId);
+    const userName = seatingUser?.name || userId;
     const seatIndex = parseInt(req.params.seatIndex, 10);
     const rooms = store.getRooms();
     const idx = rooms.findIndex((r) => r.id === req.params.id);
@@ -485,8 +492,9 @@ function mountApiRoutes(app) {
     res.json({ room, seat: room.seats[seatIndex] });
   });
 
-  app.post('/api/rooms/:id/seats/:seatIndex/mute', (req, res) => {
-    const { actorId, muted } = req.body;
+  app.post('/api/rooms/:id/seats/:seatIndex/mute', requireAuth, (req, res) => {
+    const actorId = req.user.id;
+    const { muted } = req.body;
     const seatIndex = parseInt(req.params.seatIndex, 10);
     const rooms = store.getRooms();
     const idx = rooms.findIndex((r) => r.id === req.params.id);
@@ -502,8 +510,9 @@ function mountApiRoutes(app) {
     res.json({ seat: room.seats[seatIndex] });
   });
 
-  app.post('/api/rooms/:id/seats/:seatIndex/lock', (req, res) => {
-    const { actorId, locked } = req.body;
+  app.post('/api/rooms/:id/seats/:seatIndex/lock', requireAuth, (req, res) => {
+    const actorId = req.user.id;
+    const { locked } = req.body;
     const seatIndex = parseInt(req.params.seatIndex, 10);
     const rooms = store.getRooms();
     const idx = rooms.findIndex((r) => r.id === req.params.id);
