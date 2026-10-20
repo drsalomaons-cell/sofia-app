@@ -13,6 +13,8 @@ class SunlightRoomBottomBar extends StatelessWidget {
   final VoidCallback onRoomMute;
   final VoidCallback onLeave;
   final VoidCallback onRanking;
+  final VoidCallback onGames;
+  final VoidCallback onEnvelope;
 
   const SunlightRoomBottomBar({
     super.key,
@@ -25,6 +27,8 @@ class SunlightRoomBottomBar extends StatelessWidget {
     required this.onRoomMute,
     required this.onLeave,
     required this.onRanking,
+    required this.onGames,
+    required this.onEnvelope,
   });
 
   @override
@@ -45,46 +49,63 @@ class SunlightRoomBottomBar extends StatelessWidget {
           top: BorderSide(color: AppTheme.dourado.withValues(alpha: 0.25)),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _btn(
-            Icons.chat_bubble_outline,
-            'Chat',
-            chatOpen ? AppTheme.dourado : AppTheme.branco,
-            scale,
-            onChat,
-          ),
-          _btn(
-            micActive ? Icons.mic : Icons.mic_off,
-            micActive ? 'Mic ligado' : 'Mic desligado',
-            micActive ? AppTheme.dourado : AppTheme.cinzaMedio,
-            scale,
-            onMic,
-          ),
-          _btn(
-            roomMuted ? Icons.volume_off : Icons.volume_up,
-            roomMuted ? 'Ouvir' : 'Silenciar',
-            roomMuted ? AppTheme.vermelho : AppTheme.branco,
-            scale,
-            onRoomMute,
-          ),
-          _btn(
-            Icons.emoji_events_outlined,
-            'Ranking',
-            AppTheme.dourado,
-            scale,
-            onRanking,
-          ),
-          _btn(
-            Icons.card_giftcard_outlined,
-            'Presentes',
-            AppTheme.lilas,
-            scale,
-            onGift,
-          ),
-          _btn(Icons.exit_to_app, 'Sair', AppTheme.vermelho, scale, onLeave),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _btn(
+              Icons.chat_bubble_outline,
+              'Chat',
+              chatOpen ? AppTheme.dourado : AppTheme.branco,
+              scale,
+              onChat,
+            ),
+            _btn(
+              micActive ? Icons.mic : Icons.mic_off,
+              micActive ? 'Mic ligado' : 'Mic desligado',
+              micActive ? AppTheme.dourado : AppTheme.cinzaMedio,
+              scale,
+              onMic,
+            ),
+            _btn(
+              roomMuted ? Icons.volume_off : Icons.volume_up,
+              roomMuted ? 'Ouvir' : 'Silenciar',
+              roomMuted ? AppTheme.vermelho : AppTheme.branco,
+              scale,
+              onRoomMute,
+            ),
+            _btn(
+              Icons.emoji_events_outlined,
+              'Ranking',
+              AppTheme.dourado,
+              scale,
+              onRanking,
+            ),
+            _btn(
+              Icons.card_giftcard_outlined,
+              'Presentes',
+              AppTheme.lilas,
+              scale,
+              onGift,
+            ),
+            _btn(
+              Icons.sports_esports,
+              'Jogos',
+              AppTheme.dourado,
+              scale,
+              onGames,
+            ),
+            _btn(
+              Icons.mail_outline,
+              'Avisos',
+              AppTheme.branco,
+              scale,
+              onEnvelope,
+            ),
+            _btn(Icons.exit_to_app, 'Sair', AppTheme.vermelho, scale, onLeave),
+          ],
+        ),
       ),
     );
   }

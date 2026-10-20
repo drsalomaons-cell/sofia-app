@@ -297,6 +297,62 @@ function mountApiRoutes(app) {
     res.json({ balance: users[idx].balance, earning: { ...result, totalPaid: bonus }, transaction: tx });
   });
 
+  // Dice game: server-side randomness and balance mutation; authenticated user only.
+  const diceRequests = new Map();
+  const diceLocks = new Set();
+  app.post('/api/games/dice', requireAuth, requireSelf('userId'), (req, res) => {
+    const userId = req.user.id;
+    const { bet, requestId, roomId } = req.body || {};
+    const wager = Number(bet);
+    if (!Number.isSafeInteger(wager) || ![10, 25, 50, 100].includes(wager)) {
+      return res.status(400).json({ error: 'Aposta inválida.' });
+    }
+    if (typeof requestId !== 'string' || requestId.length < 8 || requestId.length > 128) {
+      return res.status(400).json({ error: 'requestId obrigatório.' });
+    }
+    const key = userId + ':' + requestId;
+    const priorBet = store.getTransactions().find((tx) => tx.userId === userId && tx.type === 'game_bet' && tx.requestId === requestId);
+    if (priorBet) return res.status(409).json({ error: 'Esta solicitação já foi processada.', transactionId: priorBet.id });
+    if (diceRequests.has(key)) return res.json(diceRequests.get(key));
+    if (diceLocks.has(userId)) return res.status(409).json({ error: 'Uma jogada já está sendo processada.' });
+    diceLocks.add(userId);
+    try {
+      const users = store.getUsers();
+      const idx = users.findIndex((u) => u.id === userId);
+      if (idx < 0) return res.status(404).json({ error: 'Usuário não encontrado.' });
+      const balanceBefore = Number(users[idx].balance || 0);
+      if (!Number.isFinite(balanceBefore) || balanceBefore < wager) {
+        return res.status(400).json({ error: 'Saldo insuficiente.' });
+      }
+      const roll = crypto.randomInt(1, 7);
+      const won = roll === 6;
+      const payout = won ? wager * 5 : 0;
+      users[idx] = economy.applyBalanceChange(users[idx], -wager);
+      if (payout > 0) users[idx] = economy.applyBalanceChange(users[idx], payout);
+      store.saveUsers(users);
+      const betTx = store.addTransaction({
+        id: txId(), userId, type: 'game_bet', amount: -wager,
+        description: 'Aposta em dados' + (roomId ? ' — sala ' + String(roomId).slice(0, 80) : ''),
+        roomId: roomId || undefined, status: 'completed', requestId,
+        createdAt: new Date().toISOString(),
+      });
+      if (payout > 0) store.addTransaction({
+        id: txId(), userId, type: 'game_payout', amount: payout,
+        description: 'Prêmio de dados (resultado 6)',
+        roomId: roomId || undefined, status: 'completed', requestId,
+        createdAt: new Date().toISOString(),
+      });
+      const response = { result: { roll, won, bet: wager, payout, balance: users[idx].balance, transactionId: betTx.id } };
+      diceRequests.set(key, response);
+      return res.json(response);
+    } catch (error) {
+      console.error('[GAMES] dice failed:', error.message);
+      return res.status(500).json({ error: 'Não foi possível processar a jogada.' });
+    } finally {
+      diceLocks.delete(userId);
+    }
+  });
+
   // ── Rooms ──
   app.get('/api/rooms', (req, res) => {
     const region = req.query.region;

@@ -17,6 +17,7 @@ import 'package:sofia/services/socket_service.dart';
 import 'package:sofia/widgets/room/sofia_seats_layout.dart';
 import 'package:sofia/widgets/room/room_chat_panel.dart';
 import 'package:sofia/features/sunlight/widgets/sunlight_room_bottom_bar.dart';
+import 'package:sofia/features/rooms/screens/room_games_sheet.dart';
 import 'package:sofia/widgets/room/sofia_seat_action_sheet.dart';
 import 'package:camera/camera.dart';
 
@@ -49,6 +50,7 @@ class _RoomScreenState extends State<RoomScreen> {
   List<String> _participants = [];
   List<Map<String, dynamic>> _giftRanking = [];
   Map<String, dynamic>? _rocketGoal;
+  bool _rocketLaunched = false;
   bool _showChat = false;
   String? _roomId;
   String? _hostId;
@@ -403,30 +405,139 @@ class _RoomScreenState extends State<RoomScreen> {
     }
   }
 
-  void _showParticipants() {
-    showModalBottomSheet(
+  void _showRoomInfo() {
+    showModalBottomSheet<void>(
       context: context,
-      builder: (_) => ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'Participantes (${_participants.length})',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ..._participants.map(
-            (id) => ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.person)),
-              title: Text(
-                id == context.read<AuthProvider>().user?.id
-                    ? 'Você'
-                    : 'Usuário $id',
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Informações da sala',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
+              const ListTile(
+                leading: Icon(Icons.family_restroom),
+                title: Text('Família'),
+                subtitle: Text('Informações e recursos de família'),
+              ),
+              const ListTile(
+                leading: Icon(Icons.support_agent),
+                title: Text('Suporte'),
+                subtitle: Text(
+                  'Use os canais oficiais do aplicativo para atendimento',
+                ),
+              ),
+              const ListTile(
+                leading: Icon(Icons.translate),
+                title: Text('Tradução'),
+                subtitle: Text('Tradução automática ainda não conectada'),
+              ),
+              const ListTile(
+                leading: Icon(Icons.campaign_outlined),
+                title: Text('Avisos'),
+                subtitle: Text('Informativos da sala'),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  Future<void> _showRoomActions() async {
+    final size = MediaQuery.sizeOf(context);
+    final safeTop = MediaQuery.paddingOf(context).top;
+    final action = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        size.width - 240,
+        safeTop + 54,
+        8,
+        size.height - safeTop - 360,
+      ),
+      items: const [
+        PopupMenuItem(value: 'clear_room', child: Text('Limpeza de sala')),
+        PopupMenuItem(value: 'clear_text', child: Text('Limpeza de texto')),
+        PopupMenuItem(
+          value: 'clear_charisma',
+          child: Text('Limpeza de carisma'),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem(value: 'cover', child: Text('Mudar capa')),
+        PopupMenuItem(value: 'background', child: Text('Mudar fundo')),
+        PopupMenuItem(value: 'chairs', child: Text('Aumentar cadeiras')),
+      ],
+    );
+    if (!mounted || action == null) return;
+    _handleRoomMenuAction(action);
+  }
+
+  void _handleRoomMenuAction(String action) {
+    final userId = context.read<AuthProvider>().user?.id;
+    if (!_canModerateRoom(userId)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Somente o dono ou um moderador pode usar estes controles.',
+          ),
+        ),
+      );
+      return;
+    }
+    switch (action) {
+      case 'clear_room':
+      case 'clear_text':
+        setState(() {
+          _messages.removeWhere((message) => !message.isSystem);
+          _showChat = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mensagens locais da sala foram limpas.'),
+          ),
+        );
+        break;
+      case 'clear_charisma':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Limpeza de carisma depende da integração de carisma do backend, ainda não conectada.',
+            ),
+          ),
+        );
+        break;
+      case 'cover':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'A troca de capa precisa ser conectada ao serviço de personalização da sala.',
+            ),
+          ),
+        );
+        break;
+      case 'background':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'A troca de fundo precisa ser conectada ao serviço de personalização da sala.',
+            ),
+          ),
+        );
+        break;
+      case 'chairs':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Aumentar cadeiras exige atualização persistente no backend; nenhuma cadeira foi alterada localmente.',
+            ),
+          ),
+        );
+        break;
+    }
   }
 
   Future<void> _loadRocketGoal() async {
@@ -434,7 +545,12 @@ class _RoomScreenState extends State<RoomScreen> {
     if (roomId == null) return;
     final goal = await _roomService.getRocketGoal(roomId);
     if (!mounted || goal == null) return;
-    setState(() => _rocketGoal = goal);
+    final current = (goal['current'] as num?)?.toInt() ?? 0;
+    final target = (goal['target'] as num?)?.toInt() ?? 400000;
+    setState(() {
+      _rocketGoal = goal;
+      _rocketLaunched = target > 0 && current >= target;
+    });
   }
 
   Future<void> _loadGiftRanking() async {
@@ -453,8 +569,11 @@ class _RoomScreenState extends State<RoomScreen> {
     }
     if (!mounted) return;
     final sortedRanking = List<Map<String, dynamic>>.from(_giftRanking)
-      ..sort((a, b) => ((b['totalCoins'] as num?)?.toInt() ?? 0)
-          .compareTo((a['totalCoins'] as num?)?.toInt() ?? 0));
+      ..sort(
+        (a, b) => ((b['totalCoins'] as num?)?.toInt() ?? 0).compareTo(
+          (a['totalCoins'] as num?)?.toInt() ?? 0,
+        ),
+      );
     final topRanking = sortedRanking.take(10).toList();
     final rocketCurrent = (_rocketGoal?['current'] as num?)?.toInt() ?? 0;
     final rocketTarget = (_rocketGoal?['target'] as num?)?.toInt() ?? 400000;
@@ -486,8 +605,10 @@ class _RoomScreenState extends State<RoomScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Text('🚀 Meta do foguete',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      '🚀 Meta do foguete',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const Spacer(),
                     Text('$rocketCurrent / $rocketTarget'),
                   ],
@@ -498,8 +619,12 @@ class _RoomScreenState extends State<RoomScreen> {
                   child: LinearProgressIndicator(
                     value: rocketProgress,
                     minHeight: 7,
-                    backgroundColor: AppTheme.cinzaMedio.withValues(alpha: 0.25),
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.dourado),
+                    backgroundColor: AppTheme.cinzaMedio.withValues(
+                      alpha: 0.25,
+                    ),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppTheme.dourado,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -628,7 +753,22 @@ class _RoomScreenState extends State<RoomScreen> {
                   SofiaPremiumTopHeader(
                     roomName: widget.roomName,
                     roomTheme: widget.roomTheme,
-                    onMenu: _showParticipants,
+                    onMenu: _showRoomActions,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 2),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'ID da sala: ${_roomId ?? 'local'}  •  ID do proprietário: ${_hostId ?? 'não disponível'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppTheme.branco.withValues(alpha: 0.72),
+                        ),
+                      ),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(10, 0, 10, 2),
@@ -842,10 +982,49 @@ class _RoomScreenState extends State<RoomScreen> {
                         ),
                         onLeave: _leaveRoom,
                         onRanking: _showRocketRanking,
+                        onGames: () {
+                          final currentUserId = user?.id;
+                          final isSeated = _seats.any(
+                            (seat) =>
+                                seat.userId == currentUserId &&
+                                !seat.isLocked &&
+                                (seat.role == 'owner' ||
+                                    seat.role == 'host' ||
+                                    seat.role == 'moderator' ||
+                                    seat.role == 'participant'),
+                          );
+                          RoomGamesSheet.show(
+                            context,
+                            roomId: _roomId,
+                            canStartGame: isHost || isSeated,
+                          );
+                        },
+                        onEnvelope: _showRoomInfo,
                       );
                     },
                   ),
                 ],
+              ),
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 1500),
+                curve: Curves.easeInCubic,
+                right: 20,
+                top: _rocketLaunched
+                    ? 92
+                    : MediaQuery.sizeOf(context).height + 80,
+                child: IgnorePointer(
+                  child: Transform.rotate(
+                    angle: -0.35,
+                    child: const Icon(
+                      Icons.rocket_launch,
+                      size: 44,
+                      color: AppTheme.dourado,
+                      shadows: [
+                        Shadow(color: Colors.orangeAccent, blurRadius: 18),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               if (_showChat)
                 Positioned(
