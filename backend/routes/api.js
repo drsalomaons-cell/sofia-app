@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+﻿const crypto = require('crypto');
 const store = require('../data/store');
 const { hashPassword } = require('../auth/password');
 const economy = require('../economy/engine');
@@ -6,6 +6,8 @@ const fraud = require('../fraud/detector');
 const roles = require('../auth/roles');
 const { moderateContent } = require('../moderation/filter');
 const { requireAdmin } = require('../auth/admin_session');
+const { requireAuth, requireSelf } = require('../middleware/auth');
+const _jwt = require('../auth/jwt');
 const { loadEconomyConfig, saveEconomyConfig } = require('../economy/store');
 const pagbank = require('../services/pagbank');
 const zego = require('../services/zego');
@@ -43,7 +45,7 @@ function mountApiRoutes(app) {
         adminPanelUrl: 'https://sofia-app-yhzb.onrender.com/admin',
       });
     }
-    res.json({ user: store.publicAppUser(user), token: user.id });
+    res.json({ user: store.publicAppUser(user), token: _jwt.sign(user) });
   });
 
   app.post('/api/auth/register', (req, res) => {
@@ -73,7 +75,7 @@ function mountApiRoutes(app) {
     const users = store.getUsers();
     users.push(user);
     store.saveUsers(users);
-    res.json({ user: store.publicAppUser(user), token: user.id });
+    res.json({ user: store.publicAppUser(user), token: _jwt.sign(user) });
   });
 
   app.get('/api/auth/me/:userId', (req, res) => {
@@ -94,7 +96,7 @@ function mountApiRoutes(app) {
     res.json({ success: true, config: cfg });
   });
 
-  app.get('/api/wallet/:userId/balance', (req, res) => {
+  app.get('/api/wallet/:userId/balance', requireAuth, requireSelf('userId'), (req, res) => {
     const user = store.findUser(req.params.userId);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
     const vip = economy.getVipTier(user.totalSpend || 0);
@@ -114,12 +116,12 @@ function mountApiRoutes(app) {
     });
   });
 
-  app.get('/api/wallet/:userId/transactions', (req, res) => {
+  app.get('/api/wallet/:userId/transactions', requireAuth, requireSelf('userId'), (req, res) => {
     const txs = store.getTransactions().filter((t) => t.userId === req.params.userId);
     res.json({ transactions: txs });
   });
 
-  app.post('/api/wallet/recharge', async (req, res) => {
+  app.post('/api/wallet/recharge', requireAuth, requireSelf('userId'), async (req, res) => {
     const { userId, amount, paymentMethod = 'PIX' } = req.body;
     const users = store.getUsers();
     const idx = users.findIndex((u) => u.id === userId);
@@ -181,7 +183,7 @@ function mountApiRoutes(app) {
     });
   });
 
-  app.post('/api/wallet/withdraw', async (req, res) => {
+  app.post('/api/wallet/withdraw', requireAuth, requireSelf('userId'), async (req, res) => {
     const { userId, amount, pixKey, bankData } = req.body;
     const users = store.getUsers();
     const idx = users.findIndex((u) => u.id === userId);
