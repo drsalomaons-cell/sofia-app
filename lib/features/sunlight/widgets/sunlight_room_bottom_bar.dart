@@ -12,6 +12,7 @@ class SunlightRoomBottomBar extends StatelessWidget {
   final VoidCallback onGift;
   final VoidCallback onRoomMute;
   final VoidCallback onLeave;
+  final VoidCallback onRanking;
 
   const SunlightRoomBottomBar({
     super.key,
@@ -23,6 +24,7 @@ class SunlightRoomBottomBar extends StatelessWidget {
     required this.onGift,
     required this.onRoomMute,
     required this.onLeave,
+    required this.onRanking,
   });
 
   @override
@@ -66,6 +68,13 @@ class SunlightRoomBottomBar extends StatelessWidget {
             roomMuted ? AppTheme.vermelho : AppTheme.branco,
             scale,
             onRoomMute,
+          ),
+          _btn(
+            Icons.emoji_events_outlined,
+            'Ranking',
+            AppTheme.dourado,
+            scale,
+            onRanking,
           ),
           _btn(
             Icons.card_giftcard_outlined,

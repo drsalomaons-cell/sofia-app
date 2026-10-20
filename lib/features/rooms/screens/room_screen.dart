@@ -452,6 +452,15 @@ class _RoomScreenState extends State<RoomScreen> {
       if (!mounted) return;
     }
     if (!mounted) return;
+    final sortedRanking = List<Map<String, dynamic>>.from(_giftRanking)
+      ..sort((a, b) => ((b['totalCoins'] as num?)?.toInt() ?? 0)
+          .compareTo((a['totalCoins'] as num?)?.toInt() ?? 0));
+    final topRanking = sortedRanking.take(10).toList();
+    final rocketCurrent = (_rocketGoal?['current'] as num?)?.toInt() ?? 0;
+    final rocketTarget = (_rocketGoal?['target'] as num?)?.toInt() ?? 400000;
+    final rocketProgress = rocketTarget > 0
+        ? (rocketCurrent / rocketTarget).clamp(0.0, 1.0)
+        : 0.0;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -475,7 +484,26 @@ class _RoomScreenState extends State<RoomScreen> {
                   style: const TextStyle(color: AppTheme.cinzaMedio),
                 ),
                 const SizedBox(height: 12),
-                if (_giftRanking.isEmpty)
+                Row(
+                  children: [
+                    const Text('🚀 Meta do foguete',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    Text('$rocketCurrent / $rocketTarget'),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: rocketProgress,
+                    minHeight: 7,
+                    backgroundColor: AppTheme.cinzaMedio.withValues(alpha: 0.25),
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.dourado),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (topRanking.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Text(
@@ -487,9 +515,9 @@ class _RoomScreenState extends State<RoomScreen> {
                   Flexible(
                     child: ListView.builder(
                       shrinkWrap: true,
-                      itemCount: _giftRanking.length,
+                      itemCount: topRanking.length,
                       itemBuilder: (context, index) {
-                        final entry = _giftRanking[index];
+                        final entry = topRanking[index];
                         final name =
                             entry['name']?.toString() ?? 'Participante';
                         final photo = entry['photoUrl']?.toString();
@@ -520,11 +548,11 @@ class _RoomScreenState extends State<RoomScreen> {
                       },
                     ),
                   ),
-                if (_giftRanking.isNotEmpty)
+                if (topRanking.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      'No topo do foguete: ${_giftRanking.first['name'] ?? 'Participante'}',
+                      'No topo do foguete: ${topRanking.first['name'] ?? 'Participante'}',
                       style: const TextStyle(
                         color: AppTheme.dourado,
                         fontWeight: FontWeight.bold,
@@ -813,6 +841,7 @@ class _RoomScreenState extends State<RoomScreen> {
                           recipientId: _giftRecipientId,
                         ),
                         onLeave: _leaveRoom,
+                        onRanking: _showRocketRanking,
                       );
                     },
                   ),
