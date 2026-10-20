@@ -10,6 +10,7 @@ const { requireAuth, requireSelf } = require('../middleware/auth');
 const _jwt = require('../auth/jwt');
 const { loadEconomyConfig, saveEconomyConfig } = require('../economy/store');
 const pagbank = require('../services/pagbank');
+const withdrawal = require('../services/withdrawal');
 const zego = require('../services/zego');
 const { syncUserLevelsAndVip } = require('../jobs/scheduler');
 
@@ -217,61 +218,13 @@ function mountApiRoutes(app) {
   });
 
   app.post('/api/wallet/withdraw', requireAuth, requireSelf('userId'), async (req, res) => {
-    const { userId, amount, pixKey, bankData } = req.body;
-    const users = store.getUsers();
-    const idx = users.findIndex((u) => u.id === userId);
-    if (idx < 0) return res.status(404).json({ error: 'Usuário não encontrado' });
-
-    const withdrawCalc = economy.processWithdraw(amount);
-    const totalDebit = withdrawCalc.gross;
-
-    const recentWithdraws = store.getTransactions().filter(
-      (t) => t.userId === userId && t.type === 'withdraw' && Date.now() - new Date(t.createdAt).getTime() < 86400000
-    ).length;
-
-    const analysis = fraud.analyzeTransaction({
-      withdrawAmount: totalDebit,
-      balance: users[idx].balance,
-      recentWithdraws,
+    const { userId, amount, pixKey, bankData, requestId } = req.body || {};
+    const idempotencyKey = req.get('Idempotency-Key') || requestId;
+    const result = await withdrawal.createWithdrawal({
+      userId, amount: Number(amount), pixKey, bankData, requestId: idempotencyKey,
+      store, economy, fraud, pagbank,
     });
-    if (analysis.blocked) {
-      return res.status(403).json({ error: 'Saque bloqueado por segurança', analysis });
-    }
-
-    try {
-      users[idx].balance = economy.applyBalanceChange(users[idx], -totalDebit).balance;
-    } catch (e) {
-      return res.status(400).json({ error: e.message });
-    }
-    store.saveUsers(users);
-
-    const paymentResult = await pagbank.createPixWithdraw({
-      amount: withdrawCalc.net,
-      pixKey,
-      userId,
-    });
-
-    const tx = store.addTransaction({
-      id: txId(),
-      userId,
-      type: 'withdraw',
-      amount: -totalDebit,
-      description: `Saque PIX (taxa R$ ${withdrawCalc.fee} · ${withdrawCalc.processingDays} dias úteis)`,
-      status: 'pending',
-      pixKey,
-      bankData,
-      fee: withdrawCalc.fee,
-      netAmount: withdrawCalc.net,
-      estimatedCompletion: withdrawCalc.estimatedCompletion,
-      createdAt: new Date().toISOString(),
-    });
-
-    res.json({
-      balance: users[idx].balance,
-      transaction: tx,
-      withdraw: withdrawCalc,
-      payment: paymentResult,
-    });
+    return res.status(result.statusCode).json(result.body);
   });
 
   app.post('/api/wallet/earning', requireAuth, requireSelf('userId'), (req, res) => {
@@ -698,18 +651,24 @@ function mountApiRoutes(app) {
     res.json(zego.generateToken04(String(userId), String(roomId)));
   });
 
-  app.post('/api/webhooks/pagbank', (req, res) => {
+  app.post('/api/webhooks/pagbank', async (req, res) => {
     const sig = req.headers['x-pagseguro-signature'] || req.headers['x-hub-signature'] || '';
     const raw = req.rawBody || JSON.stringify(req.body);
     if (!pagbank.verifyWebhookSignature(raw, sig)) {
       return res.status(401).json({ error: 'Assinatura inválida' });
     }
     const event = pagbank.parseWebhookEvent(req.body);
-    const pending = pagbank.getPending(event.ref);
-    if (!pending || !event.paid) {
-      return res.json({ received: true, processed: false });
+    const pending = await pagbank.getPending(event.ref);
+    if (!pending) return res.json({ received: true, processed: false });
+
+    if (pending.type === 'withdraw') {
+      const result = withdrawal.settleWithdrawalWebhook({ pending, event, store, economy });
+      if (result.processed) await pagbank.completePending(event.ref, result.transaction?.status || event.status.toLowerCase());
+      return res.json({ received: true, processed: result.processed, duplicate: Boolean(result.duplicate) });
     }
-    pagbank.completePending(event.ref, 'completed');
+
+    if (!event.paid) return res.json({ received: true, processed: false });
+    await pagbank.completePending(event.ref, 'completed');
     const users = store.getUsers();
     const idx = users.findIndex((u) => u.id === pending.user_id || u.id === pending.userId);
     if (idx >= 0 && pending.type === 'recharge') {

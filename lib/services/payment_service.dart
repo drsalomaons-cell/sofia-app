@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:sofia/models/transaction_model.dart';
 import 'package:sofia/services/api_client.dart';
 import 'package:sofia/services/economy_service.dart';
@@ -41,11 +42,13 @@ class PaymentService {
     required String pixKey,
     required Map<String, dynamic> bankData,
   }) async {
+    final requestId = '$userId-${DateTime.now().microsecondsSinceEpoch}-${math.Random.secure().nextInt(0x7fffffff)}';
     final data = await ApiClient.postRaw('/api/wallet/withdraw', {
       'userId': userId,
       'amount': amount,
       'pixKey': pixKey,
       'bankData': bankData,
+      'requestId': requestId,
     });
     if (data != null && data['transaction'] != null) {
       return TransactionModel.fromJson(Map<String, dynamic>.from(data['transaction'] as Map));

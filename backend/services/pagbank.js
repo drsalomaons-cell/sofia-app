@@ -26,16 +26,21 @@ function getPending(id) {
   if (pg.isPgActive()) {
     return pg.pgFindPendingPayment(id);
   }
-  return pendingJson.get(id) || null;
+  if (pendingJson.has(id)) return pendingJson.get(id);
+  return Array.from(pendingJson.values()).find((pending) => pending.externalId === id) || null;
 }
 
 function completePending(id, status) {
   if (pg.isPgActive()) {
-    pg.pgCompletePendingPayment(id, status).catch(() => {});
-  } else {
-    const p = pendingJson.get(id);
-    if (p) pendingJson.set(id, { ...p, status });
+    return pg.pgCompletePendingPayment(id, status).catch(() => {});
   }
+  const direct = pendingJson.get(id);
+  if (direct) {
+    pendingJson.set(id, { ...direct, status });
+    return;
+  }
+  const entry = Array.from(pendingJson.entries()).find(([, pending]) => pending.externalId === id);
+  if (entry) pendingJson.set(entry[0], { ...entry[1], status });
 }
 
 async function createPixCharge({ amount, userId, description, pendingId }) {
@@ -97,13 +102,12 @@ async function createPixWithdraw({ amount, pixKey, userId, pendingId }) {
 
   if (!PAGBANK_TOKEN) {
     return {
-      success: true,
+      success: false,
       sandbox: true,
       transferId,
       amount,
-      pixKey,
-      status: 'PENDING',
-      message: 'Saque PIX simulado — processamento em até 3 dias úteis',
+      status: 'ERROR',
+      error: 'PAGBANK_TOKEN ausente; saque não enviado ao provedor.',
     };
   }
 
@@ -143,8 +147,8 @@ function verifyWebhookSignature(rawBody, signature) {
 }
 
 function parseWebhookEvent(body) {
-  const status = (body.status || body.charges?.[0]?.status || '').toUpperCase();
-  const ref = body.reference_id || body.id || body.charges?.[0]?.reference_id;
+  const status = (body.status || body.transfers?.[0]?.status || body.charges?.[0]?.status || '').toUpperCase();
+  const ref = body.reference || body.reference_id || body.transfers?.[0]?.reference || body.id || body.charges?.[0]?.reference_id;
   const paid = ['PAID', 'COMPLETED', 'CONFIRMED'].includes(status);
   return { ref, status, paid, raw: body };
 }

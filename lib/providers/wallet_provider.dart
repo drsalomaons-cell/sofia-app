@@ -110,7 +110,7 @@ class WalletProvider extends ChangeNotifier {
     required String pixKey,
     required Map<String, dynamic> bankData,
   }) async {
-    if (_user == null) return false;
+    if (_user == null || _isLoading) return false;
     
     if (amount > _balance) {
       _errorMessage = 'Saldo insuficiente';
