@@ -83,6 +83,39 @@ function mountApiRoutes(app) {
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
     res.json({ user: store.publicAppUser(user) });
   });
+  // ── User profile gallery (self only; max 5 images, 2 MiB each) ──
+  app.put('/api/users/gallery', requireAuth, requireSelf('userId'), (req, res) => {
+    const { userId, gallery } = req.body || {};
+    if (!Array.isArray(gallery) || gallery.length > 5) {
+      return res.status(400).json({ error: 'Galeria deve conter no máximo 5 fotos.' });
+    }
+
+    const validatedGallery = [];
+    for (const item of gallery) {
+      if (typeof item !== 'string' || item.length === 0) {
+        return res.status(400).json({ error: 'Cada foto deve ser uma URL ou imagem base64 válida.' });
+      }
+      if (/^https?:\/\//i.test(item)) {
+        if (item.length > 2048) return res.status(400).json({ error: 'URL de foto muito longa.' });
+        validatedGallery.push(item);
+        continue;
+      }
+      const match = item.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/i);
+      if (!match) return res.status(400).json({ error: 'Formato inválido: use URL HTTP(S) ou imagem PNG/JPEG/WebP base64.' });
+      const encoded = match[2];
+      const padding = encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0;
+      const decodedBytes = Math.floor(encoded.length * 3 / 4) - padding;
+      if (decodedBytes <= 0 || decodedBytes > 2 * 1024 * 1024) return res.status(413).json({ error: 'Cada foto base64 deve ter no máximo 2 MB.' });
+      validatedGallery.push(item);
+    }
+
+    const users = store.getUsers();
+    const index = users.findIndex((user) => String(user.id) === String(userId));
+    if (index < 0) return res.status(404).json({ error: 'Usuário não encontrado.' });
+    users[index] = { ...users[index], gallery: validatedGallery };
+    store.saveUsers(users);
+    return res.json({ success: true, userId, gallery: validatedGallery });
+  });
   app.get('/api/economy/rules', (_req, res) => {
     res.json(economy.getFullRules());
   });

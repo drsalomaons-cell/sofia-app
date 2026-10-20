@@ -6,6 +6,7 @@ class UserModel {
   final String gender;
   final String interestedIn;
   final String? photoUrl;
+  final List<String> gallery;
   final double balance;
   final double coins;
   final double diamonds;
@@ -31,6 +32,7 @@ class UserModel {
     required this.gender,
     required this.interestedIn,
     this.photoUrl,
+    this.gallery = const [],
     this.balance = 0.0,
     this.coins = 0.0,
     this.diamonds = 0.0,
@@ -57,6 +59,7 @@ class UserModel {
     String? gender,
     String? interestedIn,
     String? photoUrl,
+    List<String>? gallery,
     double? balance,
     double? coins,
     double? diamonds,
@@ -82,6 +85,7 @@ class UserModel {
       gender: gender ?? this.gender,
       interestedIn: interestedIn ?? this.interestedIn,
       photoUrl: photoUrl ?? this.photoUrl,
+      gallery: gallery ?? this.gallery,
       balance: balance ?? this.balance,
       coins: coins ?? this.coins,
       diamonds: diamonds ?? this.diamonds,
@@ -110,6 +114,7 @@ class UserModel {
       'gender': gender,
       'interestedIn': interestedIn,
       'photoUrl': photoUrl,
+      'gallery': gallery,
       'balance': balance,
       'coins': coins,
       'diamonds': diamonds,
@@ -137,7 +142,10 @@ class UserModel {
       phone: json['phone'],
       gender: json['gender'],
       interestedIn: json['interestedIn'],
-      photoUrl: json['photoUrl'],
+      photoUrl: json['photoUrl']?.toString(),
+      gallery: (json['gallery'] as List<dynamic>? ?? const <dynamic>[])
+          .whereType<String>()
+          .toList(growable: false),
       balance: json['balance']?.toDouble() ?? 0.0,
       coins: json['coins']?.toDouble() ?? json['balance']?.toDouble() ?? 0.0,
       diamonds: json['diamonds']?.toDouble() ?? 0.0,
@@ -153,7 +161,9 @@ class UserModel {
       isRegionalAdmin: json['isRegionalAdmin'] ?? false,
       region: json['region'],
       createdAt: DateTime.parse(json['createdAt']),
-      lastLogin: json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
+      lastLogin: json['lastLogin'] != null
+          ? DateTime.parse(json['lastLogin'])
+          : null,
     );
   }
 }
