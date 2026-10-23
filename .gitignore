@@ -51,3 +51,6 @@ app.*.map.json
 # Dados de runtime/usuarios - NUNCA versionar
 backend/data/data/
 backend/data/users.json
+
+# Dados locais do backend: nunca versionar
+backend/data/
