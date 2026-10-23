@@ -47,3 +47,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Dados de runtime/usuarios - NUNCA versionar
+backend/data/data/
+backend/data/users.json
