@@ -20,6 +20,7 @@ Future<bool> sendSofiaGift(
   int participantCount = 1,
   VoidCallback? onInsufficientBalance,
   int combo = 1,
+  void Function(String message)? onError,
 }) async {
   final auth = context.read<AuthProvider>();
   final wallet = context.read<WalletProvider>();
@@ -30,6 +31,7 @@ Future<bool> sendSofiaGift(
       roomId == null ||
       recipientId == null ||
       recipientId.isEmpty) {
+    onError?.call('Entre em uma sala com um destinatário disponível para enviar presentes.');
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
@@ -44,28 +46,42 @@ Future<bool> sendSofiaGift(
   var delivered = 0;
   final total = combo < 1 ? 1 : combo;
   for (var i = 0; i < total; i++) {
-    result = await ApiClient.postRaw('/api/gifts/send', {
-      'senderId': user.id,
-      'recipientId': recipientId,
-      'giftId': gift.id,
-      'roomId': roomId,
-    });
+    try {
+      result = await ApiClient.postRaw('/api/gifts/send', {
+        'senderId': user.id,
+        'recipientId': recipientId,
+        'giftId': gift.id,
+        'roomId': roomId,
+      });
+    } catch (e) {
+      result = {'error': e.toString().replaceFirst('Exception: ', '')};
+      break;
+    }
     if (result == null || result['success'] != true) break;
     delivered++;
   }
 
   if (delivered == 0) {
     if (context.mounted) {
-      final message =
+      final rawMessage =
           result?['error']?.toString() ??
           'Falha ao enviar presente. Verifique sua conexão e saldo.';
+      final message =
+          (recipientId == user.id &&
+              rawMessage.toLowerCase().contains('bloqueado'))
+          ? 'Auto-presente bloqueado pelo servidor. Aguarde o deploy da liberação de teste ou use outro usuário na sala.'
+          : rawMessage;
       final normalized = message.toLowerCase();
       final insufficient =
           normalized.contains('saldo') ||
           normalized.contains('insuficiente') ||
           normalized.contains('insufficient') ||
           normalized.contains('coins');
-      if (insufficient) onInsufficientBalance?.call();
+      if (insufficient) {
+        onInsufficientBalance?.call();
+      } else {
+        onError?.call(message);
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),

@@ -61,6 +61,7 @@ class _SofiaGiftPanelSheetState extends State<_SofiaGiftPanelSheet> {
   bool _sentSuccessfully = false;
   bool _insufficientBalance = false;
   int _combo = 1;
+  String? _errorText;
 
   Future<void> _sendSelectedGift() async {
     final gift = _selectedGift;
@@ -76,6 +77,7 @@ class _SofiaGiftPanelSheetState extends State<_SofiaGiftPanelSheet> {
       _sending = true;
       _sentSuccessfully = false;
       _insufficientBalance = false;
+      _errorText = null;
     });
 
     var sent = false;
@@ -89,19 +91,17 @@ class _SofiaGiftPanelSheetState extends State<_SofiaGiftPanelSheet> {
         isHost: widget.isHost,
         participantCount: widget.participantCount,
         combo: _combo,
+        onError: (m) {
+          if (mounted) setState(() => _errorText = m);
+        },
         onInsufficientBalance: () {
           if (mounted) setState(() => _insufficientBalance = true);
         },
       );
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Não foi possível enviar. Verifique a conexão e o saldo.',
-            ),
-            backgroundColor: Colors.red,
-          ),
+        setState(
+          () => _errorText = e.toString().replaceFirst('Exception: ', ''),
         );
       }
     } finally {
@@ -327,6 +327,29 @@ class _SofiaGiftPanelSheetState extends State<_SofiaGiftPanelSheet> {
                                 ),
                               ),
                             ),
+                        ],
+                      ),
+                    ),
+                  if (_errorText != null)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0x33FF4D4D),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.redAccent),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorText!,
+                              style: const TextStyle(color: Colors.white, fontSize: 12.5),
+                            ),
+                          ),
                         ],
                       ),
                     ),
