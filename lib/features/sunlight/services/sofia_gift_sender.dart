@@ -19,6 +19,7 @@ Future<bool> sendSofiaGift(
   bool isHost = false,
   int participantCount = 1,
   VoidCallback? onInsufficientBalance,
+  int combo = 1,
 }) async {
   final auth = context.read<AuthProvider>();
   final wallet = context.read<WalletProvider>();
@@ -39,14 +40,21 @@ Future<bool> sendSofiaGift(
     return false;
   }
 
-  final result = await ApiClient.postRaw('/api/gifts/send', {
-    'senderId': user.id,
-    'recipientId': recipientId,
-    'giftId': gift.id,
-    'roomId': roomId,
-  });
+  Map<String, dynamic>? result;
+  var delivered = 0;
+  final total = combo < 1 ? 1 : combo;
+  for (var i = 0; i < total; i++) {
+    result = await ApiClient.postRaw('/api/gifts/send', {
+      'senderId': user.id,
+      'recipientId': recipientId,
+      'giftId': gift.id,
+      'roomId': roomId,
+    });
+    if (result == null || result['success'] != true) break;
+    delivered++;
+  }
 
-  if (result == null || result['success'] != true) {
+  if (delivered == 0) {
     if (context.mounted) {
       final message =
           result?['error']?.toString() ??
@@ -84,7 +92,8 @@ Future<bool> sendSofiaGift(
       'recipientId': recipientId,
       'giftId': gift.id,
       'giftName': gift.name,
-      'amount': gift.coinCost,
+      'amount': gift.coinCost * delivered,
+      'count': delivered,
     });
   }
   unawaited(effect.playGift(giftId: gift.id, senderName: user.name));
@@ -94,7 +103,7 @@ Future<bool> sendSofiaGift(
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '${gift.iconEmoji} ${gift.name} enviado por ${gift.coinCost} moedas!',
+          '${gift.iconEmoji} ${gift.name}${delivered > 1 ? ' x$delivered' : ''} enviado por ${gift.coinCost * delivered} moedas!',
         ),
         duration: const Duration(seconds: 2),
       ),

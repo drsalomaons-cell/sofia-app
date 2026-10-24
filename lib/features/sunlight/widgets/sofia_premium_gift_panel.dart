@@ -17,6 +17,7 @@ void showSofiaPremiumGiftPanel(
   required bool isHost,
   required int participantCount,
   String? recipientId,
+  void Function(SofiaGiftItem gift, int combo)? onGiftSent,
 }) {
   showModalBottomSheet<void>(
     context: context,
@@ -28,6 +29,7 @@ void showSofiaPremiumGiftPanel(
       isHost: isHost,
       participantCount: participantCount,
       recipientId: recipientId,
+      onGiftSent: onGiftSent,
     ),
   );
 }
@@ -38,6 +40,7 @@ class _SofiaGiftPanelSheet extends StatefulWidget {
   final bool isHost;
   final int participantCount;
   final String? recipientId;
+  final void Function(SofiaGiftItem gift, int combo)? onGiftSent;
 
   const _SofiaGiftPanelSheet({
     required this.roomId,
@@ -45,6 +48,7 @@ class _SofiaGiftPanelSheet extends StatefulWidget {
     required this.isHost,
     required this.participantCount,
     required this.recipientId,
+    this.onGiftSent,
   });
 
   @override
@@ -56,13 +60,14 @@ class _SofiaGiftPanelSheetState extends State<_SofiaGiftPanelSheet> {
   bool _sending = false;
   bool _sentSuccessfully = false;
   bool _insufficientBalance = false;
+  int _combo = 1;
 
   Future<void> _sendSelectedGift() async {
     final gift = _selectedGift;
     if (gift == null || _sending) return;
 
     final wallet = context.read<WalletProvider>();
-    if (wallet.coins < gift.coinCost) {
+    if (wallet.coins < gift.coinCost * _combo) {
       setState(() => _insufficientBalance = true);
       return;
     }
@@ -83,6 +88,7 @@ class _SofiaGiftPanelSheetState extends State<_SofiaGiftPanelSheet> {
         recipientId: widget.recipientId,
         isHost: widget.isHost,
         participantCount: widget.participantCount,
+        combo: _combo,
         onInsufficientBalance: () {
           if (mounted) setState(() => _insufficientBalance = true);
         },
@@ -103,6 +109,7 @@ class _SofiaGiftPanelSheetState extends State<_SofiaGiftPanelSheet> {
     }
 
     if (mounted && sent) {
+      widget.onGiftSent?.call(gift, _combo);
       setState(() {
         _sentSuccessfully = true;
         _insufficientBalance = false;
@@ -286,6 +293,43 @@ class _SofiaGiftPanelSheetState extends State<_SofiaGiftPanelSheet> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  if (!_sentSuccessfully && !_insufficientBalance)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Combo',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          for (final n in const [1, 5, 10, 30])
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 3),
+                              child: ChoiceChip(
+                                label: Text('x$n'),
+                                selected: _combo == n,
+                                onSelected: _sending
+                                    ? null
+                                    : (_) => setState(() => _combo = n),
+                                selectedColor: SofiaPremiumTheme.gold,
+                                backgroundColor: Colors.white10,
+                                labelStyle: TextStyle(
+                                  color: _combo == n
+                                      ? SofiaPremiumTheme.darkBg
+                                      : Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   if (_insufficientBalance)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -392,7 +436,7 @@ class _SofiaGiftPanelSheetState extends State<_SofiaGiftPanelSheet> {
                                 : Text(
                                     _selectedGift == null
                                         ? 'Escolher'
-                                        : 'Enviar • ${_selectedGift!.coinCost} 🪙',
+                                        : 'Enviar${_combo > 1 ? ' x$_combo' : ''} • ${_selectedGift!.coinCost * _combo} 🪙',
                                     textAlign: TextAlign.center,
                                   ),
                           ),
