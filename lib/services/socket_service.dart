@@ -13,18 +13,26 @@ class SocketService extends ChangeNotifier {
 
   static String get _socketUrl {
     if (kDebugMode) {
-      return dotenv.env['SOCKET_URL_LOCAL'] ?? dotenv.env['API_URL_LOCAL'] ?? ApiClient.baseUrl;
+      return dotenv.env['SOCKET_URL_LOCAL'] ??
+          dotenv.env['API_URL_LOCAL'] ??
+          ApiClient.baseUrl;
     }
     final fromEnv = dotenv.env['SOCKET_URL'];
-    if (fromEnv != null && fromEnv.isNotEmpty) return fromEnv.replaceAll(RegExp(r'/+$'), '');
+    if (fromEnv != null && fromEnv.isNotEmpty)
+      return fromEnv.replaceAll(RegExp(r'/+$'), '');
     return ApiClient.baseUrl;
   }
+
   void connect() {
     if (_socket != null) return;
     _socket = io.io(
       _socketUrl,
-      io.OptionBuilder().setTransports(['websocket']).enableAutoConnect().build(),
-    );    _socket!.onConnect((_) {
+      io.OptionBuilder()
+          .setTransports(['websocket'])
+          .enableAutoConnect()
+          .build(),
+    );
+    _socket!.onConnect((_) {
       _connected = true;
       notifyListeners();
     });
@@ -37,7 +45,11 @@ class SocketService extends ChangeNotifier {
   void joinRoom(String roomId, String userId, String userName) {
     connect();
     _roomId = roomId;
-    _socket?.emit('room:join', {'roomId': roomId, 'userId': userId, 'userName': userName});
+    _socket?.emit('room:join', {
+      'roomId': roomId,
+      'userId': userId,
+      'userName': userName,
+    });
   }
 
   void leaveRoom(String roomId, String userId) {
@@ -54,12 +66,22 @@ class SocketService extends ChangeNotifier {
   }
 
   void emitMicToggle(String roomId, String userId, bool active) {
-    _socket?.emit('room:mic_toggle', {'roomId': roomId, 'userId': userId, 'active': active});
+    _socket?.emit('room:mic_toggle', {
+      'roomId': roomId,
+      'userId': userId,
+      'active': active,
+    });
   }
 
   void onChat(void Function(Map<String, dynamic>) handler) {
+    // A sala pode ser reaberta sem recriar o SocketService. Remova o listener
+    // anterior para que cada evento seja processado uma ?nica vez.
+    _socket?.off('room:chat');
     _socket?.on('room:chat', (data) {
-      if (data is Map) handler(Map<String, dynamic>.from(data['message'] ?? data));
+      if (data is Map) {
+        final payload = data['message'] ?? data;
+        if (payload is Map) handler(Map<String, dynamic>.from(payload));
+      }
     });
   }
 
@@ -71,6 +93,18 @@ class SocketService extends ChangeNotifier {
 
   void onRoomState(void Function(Map<String, dynamic>) handler) {
     _socket?.on('room:state', (data) {
+      if (data is Map) handler(Map<String, dynamic>.from(data));
+    });
+  }
+
+  void onRoomSettings(void Function(Map<String, dynamic>) handler) {
+    _socket?.on('room:settings', (data) {
+      if (data is Map) handler(Map<String, dynamic>.from(data));
+    });
+  }
+
+  void onRoomChatCleared(void Function(Map<String, dynamic>) handler) {
+    _socket?.on('room:chat_clear', (data) {
       if (data is Map) handler(Map<String, dynamic>.from(data));
     });
   }
@@ -87,7 +121,11 @@ class SocketService extends ChangeNotifier {
     });
   }
 
-  void emitRtcSignal(String roomId, Map<String, dynamic> signal, {String? targetUserId}) {
+  void emitRtcSignal(
+    String roomId,
+    Map<String, dynamic> signal, {
+    String? targetUserId,
+  }) {
     _socket?.emit('rtc:signal', {
       'roomId': roomId,
       'targetUserId': targetUserId,
@@ -101,7 +139,8 @@ class SocketService extends ChangeNotifier {
     });
   }
 
-  void disconnect() {    _socket?.dispose();
+  void disconnect() {
+    _socket?.dispose();
     _socket = null;
     _connected = false;
     _roomId = null;

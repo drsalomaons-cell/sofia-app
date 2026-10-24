@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sofia/features/sunlight/theme/sofia_premium_theme.dart';
 import 'package:sofia/features/sunlight/theme/sunlight_room_layout.dart';
+
 /// Atalho fixo do foguete de sala: abre o ranking/participantes, não envia presente.
 class SofiaPremiumVipGiftButton extends StatelessWidget {
   final String? roomId;
@@ -39,11 +39,25 @@ class SofiaPremiumVipGiftButton extends StatelessWidget {
               onTap: onRocketTap,
               borderRadius: BorderRadius.circular(18),
               child: Ink(
-                padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 10 * scale),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 12 * scale,
+                  vertical: 10 * scale,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
-                  gradient: const LinearGradient(colors: [SofiaPremiumTheme.gold, SofiaPremiumTheme.pink]),
-                  boxShadow: [BoxShadow(color: SofiaPremiumTheme.gold.withValues(alpha: 0.45), blurRadius: 14, offset: const Offset(0, 4))],
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6807BA), Color(0xFF00F2FE)],
+                  ),
+                  border: Border.all(
+                    color: const Color(0xFF00F2FE).withValues(alpha: 0.7),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00F2FE).withValues(alpha: 0.35),
+                      blurRadius: 18,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -51,16 +65,20 @@ class SofiaPremiumVipGiftButton extends StatelessWidget {
                     if (topContributorName != null)
                       CircleAvatar(
                         radius: 13 * scale,
-                        backgroundImage: topContributorPhotoUrl != null &&
+                        backgroundImage:
+                            topContributorPhotoUrl != null &&
                                 topContributorPhotoUrl!.isNotEmpty
                             ? NetworkImage(topContributorPhotoUrl!)
                             : null,
-                        child: topContributorPhotoUrl == null ||
+                        child:
+                            topContributorPhotoUrl == null ||
                                 topContributorPhotoUrl!.isEmpty
                             ? Text(
                                 topContributorName!.isEmpty
                                     ? '?'
-                                    : topContributorName!.substring(0, 1).toUpperCase(),
+                                    : topContributorName!
+                                          .substring(0, 1)
+                                          .toUpperCase(),
                                 style: TextStyle(fontSize: 11 * scale),
                               )
                             : null,
@@ -72,7 +90,11 @@ class SofiaPremiumVipGiftButton extends StatelessWidget {
                       topContributorName == null
                           ? 'Sala'
                           : topContributorName!.split(' ').first,
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12 * scale),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12 * scale,
+                      ),
                     ),
                   ],
                 ),
@@ -80,7 +102,10 @@ class SofiaPremiumVipGiftButton extends StatelessWidget {
             ),
           ),
           SizedBox(height: 4 * scale),
-          Text('Ranking da sala', style: TextStyle(color: Colors.white70, fontSize: 9 * scale)),
+          Text(
+            'Ranking da sala',
+            style: TextStyle(color: Colors.white70, fontSize: 9 * scale),
+          ),
         ],
       ),
     );

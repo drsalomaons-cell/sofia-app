@@ -8,32 +8,68 @@ import 'package:sofia/widgets/sofia_cover_image.dart';
 class SofiaPremiumTopHeader extends StatelessWidget {
   final String roomName;
   final String roomTheme;
+  final String coverStyle;
   final VoidCallback? onMenu;
+  final VoidCallback? onBack;
 
   const SofiaPremiumTopHeader({
     super.key,
     required this.roomName,
     required this.roomTheme,
+    this.coverStyle = 'gold',
     this.onMenu,
+    this.onBack,
   });
 
   @override
   Widget build(BuildContext context) {
     final scale = SunlightRoomLayout.compactScale(context);
     final coverSize = 52 * scale;
+    final coverAccent = switch (coverStyle) {
+      'neon' => const Color(0xFF31D7FF),
+      'violet' => const Color(0xFFB98AFF),
+      _ => SofiaPremiumTheme.gold,
+    };
 
     return Padding(
       padding: EdgeInsets.fromLTRB(10, 4, 6, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: SizedBox(
-              width: coverSize,
-              height: coverSize,
-              child: Consumer<BrandingService>(
-                builder: (_, branding, __) => SofiaCoverImage(variant: 'splash', fit: BoxFit.cover),
+          if (onBack != null)
+            IconButton(
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back, color: Colors.white70),
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints(
+                minWidth: 34 * scale,
+                minHeight: 36 * scale,
+              ),
+              tooltip: 'Sair da sala',
+            ),
+          Container(
+            width: coverSize + 4,
+            height: coverSize + 4,
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: coverAccent, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: coverAccent.withValues(alpha: 0.24),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(9),
+              child: SizedBox(
+                width: coverSize,
+                height: coverSize,
+                child: Consumer<BrandingService>(
+                  builder: (_, branding, __) =>
+                      SofiaCoverImage(variant: 'splash', fit: BoxFit.cover),
+                ),
               ),
             ),
           ),
@@ -44,28 +80,45 @@ class SofiaPremiumTopHeader extends StatelessWidget {
               children: [
                 Text(
                   roomName,
-                  style: TextStyle(color: SofiaPremiumTheme.goldSoft, fontSize: 15 * scale, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: SofiaPremiumTheme.goldSoft,
+                    fontSize: 15 * scale,
+                    fontWeight: FontWeight.bold,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                Text(roomTheme, style: TextStyle(color: Colors.white54, fontSize: 11 * scale)),
+                Text(
+                  roomTheme,
+                  style: TextStyle(color: Colors.white54, fontSize: 11 * scale),
+                ),
                 SizedBox(height: 4 * scale),
                 SizedBox(
                   height: 22 * scale,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: SofiaPremiumTheme.purpleDeep.withValues(alpha: 0.65),
+                      color: SofiaPremiumTheme.purpleDeep.withValues(
+                        alpha: 0.65,
+                      ),
                       borderRadius: BorderRadius.circular(11),
-                      border: Border.all(color: SofiaPremiumTheme.gold.withValues(alpha: 0.25)),
+                      border: Border.all(
+                        color: SofiaPremiumTheme.gold.withValues(alpha: 0.25),
+                      ),
                     ),
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       physics: const BouncingScrollPhysics(),
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 4 * scale),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10 * scale,
+                          vertical: 4 * scale,
+                        ),
                         child: Text(
                           SofiaPremiumTheme.communityRules,
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.82), fontSize: 10 * scale),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.82),
+                            fontSize: 10 * scale,
+                          ),
                         ),
                       ),
                     ),
@@ -77,9 +130,16 @@ class SofiaPremiumTopHeader extends StatelessWidget {
           if (onMenu != null)
             IconButton(
               onPressed: onMenu,
-              icon: Icon(Icons.more_vert, color: Colors.white70, size: 22 * scale),
+              icon: Icon(
+                Icons.more_vert,
+                color: Colors.white70,
+                size: 22 * scale,
+              ),
               padding: EdgeInsets.zero,
-              constraints: BoxConstraints(minWidth: 36 * scale, minHeight: 36 * scale),
+              constraints: BoxConstraints(
+                minWidth: 36 * scale,
+                minHeight: 36 * scale,
+              ),
             ),
         ],
       ),

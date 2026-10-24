@@ -114,8 +114,12 @@ class MediaService extends ChangeNotifier {
   Future<bool> startAudioStream() async {
     try {
       _errorMessage = null;
-      final hasPermission = await requestPermissions();
-      if (!hasPermission) return false;
+      final micPermission = await Permission.microphone.request();
+      if (!micPermission.isGranted) {
+        _errorMessage = 'Permissão de microfone necessária para falar na sala.';
+        notifyListeners();
+        return false;
+      }
 
       if (_roomId == null || !_zego.isJoined) {
         _errorMessage =
@@ -146,7 +150,13 @@ class MediaService extends ChangeNotifier {
   }
 
   Future<void> stopAudioStream() async {
-    await _zego.stopAudio();
+    try {
+      if (_zego.isJoined) {
+        await _zego.setMicrophoneMuted(true);
+      }
+    } catch (e) {
+      _errorMessage = 'Não foi possível silenciar o microfone ZEGO: $e';
+    }
     _isMicActive = false;
     _emitRtc('mic-off', {'active': false});
     notifyListeners();
@@ -234,7 +244,6 @@ class MediaService extends ChangeNotifier {
     );
     if (!tokenFetched) {
       _errorMessage = 'Não foi possível obter o token ZEGO/RTC.';
-      await initializeCamera();
       notifyListeners();
       return false;
     }
@@ -244,10 +253,9 @@ class MediaService extends ChangeNotifier {
       userName: userName ?? userId,
       roomId: roomId,
     );
-    await initializeCamera();
     if (!connected) {
       _errorMessage =
-          'A câmera local está disponível, mas o áudio remoto exige ZEGO configurado no servidor.';
+          'O áudio remoto exige ZEGO configurado corretamente no servidor.';
       _isMicActive = false;
       _isLiveConnected = false;
       notifyListeners();

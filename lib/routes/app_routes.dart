@@ -7,6 +7,7 @@ import 'package:sofia/features/home/screens/search_screen.dart';
 import 'package:sofia/features/wallet/screens/wallet_screen.dart';
 import 'package:sofia/features/rooms/screens/create_room_screen.dart';
 import 'package:sofia/features/rooms/screens/room_screen.dart';
+import 'package:sofia/features/live/screens/video_live_screen.dart';
 import 'package:sofia/features/admin/screens/admin_screen.dart';
 import 'package:sofia/features/profile/screens/settings_screen.dart';
 import 'package:sofia/features/profile/screens/referrals_screen.dart';
@@ -43,9 +44,24 @@ class AppRoutes {
       case wallet:
         return MaterialPageRoute(builder: (_) => const WalletScreen());
       case createRoom:
-        return MaterialPageRoute(builder: (_) => const CreateRoomScreen());
+        final createArgs = routeSettings.arguments;
+        final roomType = createArgs is Map && createArgs['roomType'] == 'video'
+            ? 'video'
+            : 'voice';
+        return MaterialPageRoute(
+          builder: (_) => CreateRoomScreen(roomType: roomType),
+        );
       case room:
         final args = routeSettings.arguments as Map<String, String>;
+        if (args['roomType'] == 'video') {
+          return MaterialPageRoute(
+            builder: (_) => VideoLiveScreen(
+              roomId: args['id']!,
+              roomName: args['name']!,
+              roomTheme: args['theme']!,
+            ),
+          );
+        }
         return MaterialPageRoute(
           builder: (_) => RoomScreen(
             roomId: args['id'],

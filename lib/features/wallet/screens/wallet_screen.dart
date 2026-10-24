@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +12,8 @@ class WalletScreen extends StatefulWidget {
   State<WalletScreen> createState() => _WalletScreenState();
 }
 
-class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderStateMixin {
+class _WalletScreenState extends State<WalletScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   double _rechargeAmount = 50;
   final _withdrawController = TextEditingController();
@@ -50,24 +52,37 @@ class _WalletScreenState extends State<WalletScreen> with SingleTickerProviderSt
           ],
         ),
       ),
-      body: Consumer<WalletProvider>(
-        builder: (context, wallet, _) {
-          if (wallet.isLoading && wallet.transactions.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _BalanceTab(wallet: wallet),
-              _RechargeTab(
-                wallet: wallet,
-                amount: _rechargeAmount,
-                onAmountChanged: (v) => setState(() => _rechargeAmount = v),
-              ),
-              _WithdrawTab(wallet: wallet, amountController: _withdrawController, pixController: _pixController),
-            ],
-          );
-        },
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF17102D), Color(0xFF0B1025), Color(0xFF080A1A)],
+          ),
+        ),
+        child: Consumer<WalletProvider>(
+          builder: (context, wallet, _) {
+            if (wallet.isLoading && wallet.transactions.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return TabBarView(
+              controller: _tabController,
+              children: [
+                _BalanceTab(wallet: wallet),
+                _RechargeTab(
+                  wallet: wallet,
+                  amount: _rechargeAmount,
+                  onAmountChanged: (v) => setState(() => _rechargeAmount = v),
+                ),
+                _WithdrawTab(
+                  wallet: wallet,
+                  amountController: _withdrawController,
+                  pixController: _pixController,
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -80,8 +95,12 @@ class _BalanceTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final earnings = wallet.transactions.where((t) => t.amount > 0).fold<double>(0, (s, t) => s + t.amount);
-    final withdraws = wallet.transactions.where((t) => t.amount < 0).fold<double>(0, (s, t) => s + t.amount.abs());
+    final earnings = wallet.transactions
+        .where((t) => t.amount > 0)
+        .fold<double>(0, (s, t) => s + t.amount);
+    final withdraws = wallet.transactions
+        .where((t) => t.amount < 0)
+        .fold<double>(0, (s, t) => s + t.amount.abs());
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -98,41 +117,116 @@ class _BalanceTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Saldo Disponível', style: TextStyle(fontSize: 16, color: AppTheme.branco)),
+                const Text(
+                  'Saldo Disponível',
+                  style: TextStyle(fontSize: 16, color: AppTheme.branco),
+                ),
                 const SizedBox(height: 10),
                 Text(
                   fmt.format(wallet.balance),
-                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppTheme.branco),
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.branco,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    Expanded(child: _infoCard('Moedas', '${wallet.coins.toStringAsFixed(0)} 🪙', Icons.monetization_on)),
+                    Expanded(
+                      child: _infoCard(
+                        'Moedas',
+                        '${wallet.coins.toStringAsFixed(0)} 🪙',
+                        Icons.monetization_on,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _infoCard('Diamantes', '${wallet.diamonds.toStringAsFixed(0)} 💎', Icons.diamond_outlined)),
+                    Expanded(
+                      child: _infoCard(
+                        'Diamantes',
+                        '${wallet.diamonds.toStringAsFixed(0)} 💎',
+                        Icons.diamond_outlined,
+                      ),
+                    ),
                   ],
                 ),
                 if (wallet.vipTag != null) ...[
                   const SizedBox(height: 12),
-                  Text(wallet.vipTag!, style: const TextStyle(color: AppTheme.dourado, fontWeight: FontWeight.bold)),
+                  Text(
+                    wallet.vipTag!,
+                    style: const TextStyle(
+                      color: AppTheme.dourado,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
                 if (wallet.levelTitle != null) ...[
                   const SizedBox(height: 4),
-                  Text('Nível: ${wallet.levelTitle}', style: const TextStyle(color: AppTheme.branco, fontSize: 13)),
+                  Text(
+                    'Nível: ${wallet.levelTitle}',
+                    style: const TextStyle(
+                      color: AppTheme.branco,
+                      fontSize: 13,
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    Expanded(child: _infoCard('Ganhos', fmt.format(earnings), Icons.trending_up)),
+                    Expanded(
+                      child: _infoCard(
+                        'Ganhos',
+                        fmt.format(earnings),
+                        Icons.trending_up,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _infoCard('Saques', fmt.format(withdraws), Icons.arrow_upward)),
+                    Expanded(
+                      child: _infoCard(
+                        'Saques',
+                        fmt.format(withdraws),
+                        Icons.arrow_upward,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
+          if (kDebugMode) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: wallet.isLoading
+                    ? null
+                    : () async {
+                        final success = await wallet.addDevelopmentCoins();
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              success
+                                  ? '10.000 moedas de teste adicionadas. Saldo atualizado.'
+                                  : wallet.errorMessage ??
+                                        'Falha no crédito de teste. O backend precisa estar em NODE_ENV=development e a API do app deve apontar para ele.',
+                            ),
+                            backgroundColor: success
+                                ? AppTheme.verde
+                                : AppTheme.vermelho,
+                          ),
+                        );
+                      },
+                icon: const Icon(Icons.science_outlined),
+                label: const Text('Adicionar Moedas (Teste)'),
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
-          const Text('Histórico', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text(
+            'Histórico',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 12),
           Expanded(
             child: wallet.transactions.isEmpty
@@ -146,16 +240,28 @@ class _BalanceTab extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
                           leading: Icon(
-                            positive ? Icons.arrow_downward : Icons.arrow_upward,
-                            color: positive ? AppTheme.verde : AppTheme.vermelho,
+                            positive
+                                ? Icons.arrow_downward
+                                : Icons.arrow_upward,
+                            color: positive
+                                ? AppTheme.verde
+                                : AppTheme.vermelho,
                           ),
-                          title: Text(tx.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-                          subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(tx.createdAt)),
+                          title: Text(
+                            tx.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            DateFormat('dd/MM/yyyy HH:mm').format(tx.createdAt),
+                          ),
                           trailing: Text(
                             '${positive ? '+' : ''}${fmt.format(tx.amount)}',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: positive ? AppTheme.verde : AppTheme.vermelho,
+                              color: positive
+                                  ? AppTheme.verde
+                                  : AppTheme.vermelho,
                             ),
                           ),
                         ),
@@ -180,8 +286,18 @@ class _BalanceTab extends StatelessWidget {
         children: [
           Icon(icon, color: AppTheme.dourado, size: 18),
           const SizedBox(height: 6),
-          Text(title, style: const TextStyle(fontSize: 11, color: AppTheme.branco)),
-          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.branco)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 11, color: AppTheme.branco),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.branco,
+            ),
+          ),
         ],
       ),
     );
@@ -193,7 +309,11 @@ class _RechargeTab extends StatelessWidget {
   final double amount;
   final ValueChanged<double> onAmountChanged;
 
-  const _RechargeTab({required this.wallet, required this.amount, required this.onAmountChanged});
+  const _RechargeTab({
+    required this.wallet,
+    required this.amount,
+    required this.onAmountChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +322,10 @@ class _RechargeTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Valor da Recarga', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text(
+            'Valor da Recarga',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           Wrap(
             spacing: 12,
@@ -214,7 +337,9 @@ class _RechargeTab extends StatelessWidget {
                 selected: selected,
                 onSelected: (_) => onAmountChanged(v),
                 selectedColor: AppTheme.roxo,
-                labelStyle: TextStyle(color: selected ? AppTheme.branco : AppTheme.preto),
+                labelStyle: TextStyle(
+                  color: selected ? AppTheme.branco : const Color(0xFFDCE3FF),
+                ),
               );
             }).toList(),
           ),
@@ -226,17 +351,29 @@ class _RechargeTab extends StatelessWidget {
               onPressed: wallet.isLoading
                   ? null
                   : () async {
-                      final ok = await wallet.recharge(amount: amount, paymentMethod: 'PIX');
+                      final ok = await wallet.recharge(
+                        amount: amount,
+                        paymentMethod: 'PIX',
+                      );
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(ok ? 'Recarga realizada!' : wallet.errorMessage ?? 'Erro'),
-                            backgroundColor: ok ? AppTheme.verde : AppTheme.vermelho,
+                            content: Text(
+                              ok
+                                  ? 'Recarga realizada!'
+                                  : wallet.errorMessage ?? 'Erro',
+                            ),
+                            backgroundColor: ok
+                                ? AppTheme.verde
+                                : AppTheme.vermelho,
                           ),
                         );
                       }
                     },
-              child: const Text('RECARREGAR VIA PIX', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'RECARREGAR VIA PIX',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -250,7 +387,11 @@ class _WithdrawTab extends StatelessWidget {
   final TextEditingController amountController;
   final TextEditingController pixController;
 
-  const _WithdrawTab({required this.wallet, required this.amountController, required this.pixController});
+  const _WithdrawTab({
+    required this.wallet,
+    required this.amountController,
+    required this.pixController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -272,12 +413,18 @@ class _WithdrawTab extends StatelessWidget {
           const SizedBox(height: 16),
           TextField(
             controller: pixController,
-            decoration: const InputDecoration(labelText: 'Chave PIX', prefixIcon: Icon(Icons.pix)),
+            decoration: const InputDecoration(
+              labelText: 'Chave PIX',
+              prefixIcon: Icon(Icons.pix),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Taxa de saque: até 5% · Prazo: até 3 dias úteis · 1 diamante = 1 moeda',
-            style: TextStyle(fontSize: 12, color: AppTheme.cinzaMedio.withValues(alpha: 0.9)),
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.cinzaMedio.withValues(alpha: 0.9),
+            ),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -287,7 +434,11 @@ class _WithdrawTab extends StatelessWidget {
               onPressed: wallet.isLoading
                   ? null
                   : () async {
-                      final amount = double.tryParse(amountController.text.replaceAll(',', '.')) ?? 0;
+                      final amount =
+                          double.tryParse(
+                            amountController.text.replaceAll(',', '.'),
+                          ) ??
+                          0;
                       final ok = await wallet.withdraw(
                         amount: amount,
                         pixKey: pixController.text,
@@ -296,13 +447,22 @@ class _WithdrawTab extends StatelessWidget {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(ok ? 'Saque solicitado!' : wallet.errorMessage ?? 'Erro'),
-                            backgroundColor: ok ? AppTheme.verde : AppTheme.vermelho,
+                            content: Text(
+                              ok
+                                  ? 'Saque solicitado!'
+                                  : wallet.errorMessage ?? 'Erro',
+                            ),
+                            backgroundColor: ok
+                                ? AppTheme.verde
+                                : AppTheme.vermelho,
                           ),
                         );
                       }
                     },
-              child: const Text('SOLICITAR SAQUE', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'SOLICITAR SAQUE',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],

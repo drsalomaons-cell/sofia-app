@@ -25,17 +25,14 @@ class SofiaSeatsLayout extends StatelessWidget {
   });
 
   static List<int> rowSizes(int total) {
-    final rest = (total - 1).clamp(0, 64);
-    if (rest == 0) return [];
-    if (rest <= 4) return [rest];
-    if (rest <= 8) return [4, rest - 4];
-    if (rest <= 14) return [6, rest - 6];
+    // O primeiro lugar é sempre o trono do dono. As fileiras seguintes
+    // mantêm no máximo quatro cadeiras: 1 + 4 + 4 para a sala de 9 lugares.
+    var left = (total - 1).clamp(0, 64);
     final rows = <int>[];
-    var left = rest;
     while (left > 0) {
-      final n = left > 6 ? 6 : left;
-      rows.add(n);
-      left -= n;
+      final count = left > 4 ? 4 : left;
+      rows.add(count);
+      left -= count;
     }
     return rows;
   }
@@ -48,66 +45,42 @@ class SofiaSeatsLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = chairCount.clamp(4, 20);
-    final rows = rowSizes(count);
     final scale = SunlightRoomLayout.compactScale(context);
-    final throneSize = 76.0 * scale;
-    final seatSize = 64.0 * scale;
-    final gap = 5.0 * scale;
+    final seatSize = 62.0 * scale;
 
+    // Grade uniforme de três colunas: os primeiros nove lugares formam
+    // exatamente o 3x3 do design; salas com mais lugares continuam roláveis.
     return LayoutBuilder(
       builder: (context, constraints) {
-        return SizedBox(
-          width: constraints.maxWidth,
-          height: constraints.maxHeight,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              _SeatBubble(
-                seat: _seatAt(0),
-                size: throneSize,
-                isThrone: true,
-                isLocal: _seatAt(0).userId == currentUserId,
-                isMicLive:
-                    _seatAt(0).userId == currentUserId && !_seatAt(0).isMuted,
-                onTap: () => onSeatTap(0, _seatAt(0)),
+        return GridView.builder(
+          padding: EdgeInsets.fromLTRB(2, 8 * scale, 2, 12 * scale),
+          physics: const BouncingScrollPhysics(),
+          itemCount: count,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 4 * scale,
+            mainAxisSpacing: 10 * scale,
+            mainAxisExtent: 104 * scale,
+          ),
+          itemBuilder: (context, index) {
+            final seat = _seatAt(index);
+            final isThrone = index == 0;
+            return Center(
+              child: _SeatBubble(
+                seat: seat,
+                size: isThrone ? 68.0 * scale : seatSize,
+                photoUrl: seat.photoUrl,
+                level: seat.level,
+                isThrone: isThrone,
+                isLocal: seat.userId == currentUserId,
+                isMicLive: seat.userId == currentUserId && !seat.isMuted,
+                onTap: () => onSeatTap(index, seat),
                 onLongPress: onSeatLongPress != null
-                    ? () => onSeatLongPress!(0, _seatAt(0))
+                    ? () => onSeatLongPress!(index, seat)
                     : null,
               ),
-              SizedBox(height: gap),
-              ...rows.asMap().entries.map((entry) {
-                final rowCount = entry.value;
-                final startIndex =
-                    1 + rows.take(entry.key).fold<int>(0, (a, b) => a + b);
-                return Padding(
-                  padding: EdgeInsets.only(bottom: gap),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(rowCount, (i) {
-                      final idx = startIndex + i;
-                      final seat = _seatAt(idx);
-                      return Padding(
-                        padding: EdgeInsets.symmetric(horizontal: gap * 0.5),
-                        child: _SeatBubble(
-                          seat: seat,
-                          size: seatSize,
-                          isThrone: false,
-                          isLocal: seat.userId == currentUserId,
-                          isMicLive:
-                              seat.userId == currentUserId && !seat.isMuted,
-                          onTap: () => onSeatTap(idx, seat),
-                          onLongPress: onSeatLongPress != null
-                              ? () => onSeatLongPress!(idx, seat)
-                              : null,
-                        ),
-                      );
-                    }),
-                  ),
-                );
-              }),
-              SizedBox(height: 4 * scale),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -117,6 +90,8 @@ class SofiaSeatsLayout extends StatelessWidget {
 class _SeatBubble extends StatelessWidget {
   final SeatModel seat;
   final double size;
+  final String? photoUrl;
+  final int level;
   final bool isThrone;
   final bool isLocal;
   final bool isMicLive;
@@ -126,6 +101,8 @@ class _SeatBubble extends StatelessWidget {
   const _SeatBubble({
     required this.seat,
     required this.size,
+    this.photoUrl,
+    this.level = 1,
     required this.isThrone,
     required this.isLocal,
     required this.isMicLive,
@@ -145,16 +122,36 @@ class _SeatBubble extends StatelessWidget {
     }
   }
 
+  Widget _seatFallbackIcon({required bool occupied, required bool isThrone}) {
+    return Container(
+      color: const Color(0xFF27283D),
+      alignment: Alignment.center,
+      child: Icon(
+        isThrone
+            ? Icons.workspace_premium_rounded
+            : occupied
+            ? Icons.person_rounded
+            : Icons.add_circle_outline_rounded,
+        color: isThrone ? const Color(0xFFFFD81D) : const Color(0xFF00DCE6),
+        size: isThrone ? 25 : 22,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final occupied = seat.isOccupied;
+    const cyan = Color(0xFF00F2FE);
+    const violet = Color(0xFFDBB8FF);
+    const gold = Color(0xFFFFD81D);
+    const muted = Color(0xFF3A494B);
     final color = isThrone
-        ? AppTheme.dourado
+        ? gold
         : isLocal
-        ? AppTheme.lilas
+        ? cyan
         : occupied
-        ? AppTheme.roxo
-        : AppTheme.cinzaMedio;
+        ? violet
+        : muted;
 
     return GestureDetector(
       onTap: onTap,
@@ -171,7 +168,7 @@ class _SeatBubble extends StatelessWidget {
             gradient: RadialGradient(
               colors: [
                 color.withValues(alpha: isThrone ? 0.55 : 0.35),
-                AppTheme.preto.withValues(alpha: 0.94),
+                const Color(0xFF0B0C1F).withValues(alpha: 0.96),
               ],
             ),
             border: Border.all(
@@ -192,10 +189,55 @@ class _SeatBubble extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                isThrone ? '👑' : (occupied ? '🎤' : '＋'),
-                style: TextStyle(fontSize: isThrone ? 24 : 20),
+              SizedBox(
+                width: size * 0.64,
+                height: size * 0.64,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ClipOval(
+                      child:
+                          occupied &&
+                              photoUrl != null &&
+                              (photoUrl!.startsWith('https://') ||
+                                  photoUrl!.startsWith('http://'))
+                          ? Image.network(
+                              photoUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _seatFallbackIcon(
+                                occupied: occupied,
+                                isThrone: isThrone,
+                              ),
+                            )
+                          : _seatFallbackIcon(
+                              occupied: occupied,
+                              isThrone: isThrone,
+                            ),
+                    ),
+                    if (isThrone || (occupied && level > 1))
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Icon(
+                          isThrone
+                              ? Icons.workspace_premium_rounded
+                              : Icons.military_tech_rounded,
+                          color: AppTheme.dourado,
+                          size: 13,
+                        ),
+                      ),
+                  ],
+                ),
               ),
+              if (occupied)
+                Text(
+                  'Lv $level',
+                  style: const TextStyle(
+                    fontSize: 8,
+                    color: AppTheme.dourado,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               if (isThrone)
                 const Text(
                   'TRONO',

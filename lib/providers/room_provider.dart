@@ -4,13 +4,17 @@ import 'package:sofia/services/room_service.dart';
 
 class RoomProvider extends ChangeNotifier {
   final RoomService _roomService = RoomService();
-  
+
   List<RoomModel> _rooms = [];
   RoomModel? _currentRoom;
   bool _isLoading = false;
   String? _errorMessage;
 
   List<RoomModel> get rooms => _rooms;
+  List<RoomModel> get voiceRooms =>
+      _rooms.where((room) => room.roomType == 'voice').toList();
+  List<RoomModel> get videoRooms =>
+      _rooms.where((room) => room.roomType == 'video').toList();
   RoomModel? get currentRoom => _currentRoom;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -55,6 +59,7 @@ class RoomProvider extends ChangeNotifier {
     required String name,
     required String description,
     required String theme,
+    String roomType = 'voice',
     required int chairs,
     required String hostId,
     required String hostName,
@@ -71,6 +76,7 @@ class RoomProvider extends ChangeNotifier {
         name: name,
         description: description,
         theme: theme,
+        roomType: roomType,
         chairs: chairs,
         hostId: hostId,
         hostName: hostName,
@@ -92,9 +98,17 @@ class RoomProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> joinRoom(String roomId, String userId, {String? userName}) async {
+  Future<void> joinRoom(
+    String roomId,
+    String userId, {
+    String? userName,
+  }) async {
     try {
-      final room = await _roomService.joinRoom(roomId, userId, userName ?? 'Usuário');
+      final room = await _roomService.joinRoom(
+        roomId,
+        userId,
+        userName ?? 'Usuário',
+      );
       if (room != null) {
         _currentRoom = room;
         final listIdx = _rooms.indexWhere((r) => r.id == roomId);
@@ -110,12 +124,14 @@ class RoomProvider extends ChangeNotifier {
   Future<void> leaveRoom(String roomId, String userId) async {
     try {
       await _roomService.leaveRoom(roomId, userId);
-      
+
       // Atualizar sala atual
       if (_currentRoom != null && _currentRoom!.id == roomId) {
         _currentRoom = _currentRoom!.copyWith(
           currentUsers: _currentRoom!.currentUsers - 1,
-          participants: _currentRoom!.participants.where((id) => id != userId).toList(),
+          participants: _currentRoom!.participants
+              .where((id) => id != userId)
+              .toList(),
         );
         notifyListeners();
       }
@@ -128,12 +144,14 @@ class RoomProvider extends ChangeNotifier {
   Future<void> banUser(String roomId, String userId, String bannedBy) async {
     try {
       await _roomService.banUser(roomId, userId, bannedBy);
-      
+
       // Atualizar sala atual
       if (_currentRoom != null && _currentRoom!.id == roomId) {
         _currentRoom = _currentRoom!.copyWith(
           bannedUsers: [..._currentRoom!.bannedUsers, userId],
-          participants: _currentRoom!.participants.where((id) => id != userId).toList(),
+          participants: _currentRoom!.participants
+              .where((id) => id != userId)
+              .toList(),
           currentUsers: _currentRoom!.currentUsers - 1,
         );
         notifyListeners();
@@ -147,11 +165,13 @@ class RoomProvider extends ChangeNotifier {
   Future<void> unbanUser(String roomId, String userId) async {
     try {
       await _roomService.unbanUser(roomId, userId);
-      
+
       // Atualizar sala atual
       if (_currentRoom != null && _currentRoom!.id == roomId) {
         _currentRoom = _currentRoom!.copyWith(
-          bannedUsers: _currentRoom!.bannedUsers.where((id) => id != userId).toList(),
+          bannedUsers: _currentRoom!.bannedUsers
+              .where((id) => id != userId)
+              .toList(),
         );
         notifyListeners();
       }

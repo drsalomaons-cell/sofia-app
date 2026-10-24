@@ -7,13 +7,16 @@ import 'package:sofia/routes/app_routes.dart';
 import 'package:sofia/widgets/room/sofia_seats_layout.dart';
 
 class CreateRoomScreen extends StatefulWidget {
-  const CreateRoomScreen({super.key});
+  final String roomType;
+
+  const CreateRoomScreen({super.key, this.roomType = 'voice'});
 
   @override
   State<CreateRoomScreen> createState() => _CreateRoomScreenState();
 }
 
-class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerProviderStateMixin {
+class _CreateRoomScreenState extends State<CreateRoomScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -24,7 +27,14 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  final List<String> _themes = ['Festa', 'Conversa', 'Música', 'Jogos', 'Networking', 'Outro'];
+  final List<String> _themes = [
+    'Festa',
+    'Conversa',
+    'Música',
+    'Jogos',
+    'Networking',
+    'Outro',
+  ];
 
   @override
   void initState() {
@@ -33,7 +43,10 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(_animationController);
     _animationController.forward();
   }
 
@@ -49,7 +62,10 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
     if (!_formKey.currentState!.validate()) return;
     if (_selectedTheme == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione um tema'), backgroundColor: AppTheme.vermelho),
+        const SnackBar(
+          content: Text('Selecione um tema'),
+          backgroundColor: AppTheme.vermelho,
+        ),
       );
       return;
     }
@@ -59,30 +75,41 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
     if (user == null) return;
 
     final ok = await context.read<RoomProvider>().createRoom(
-          name: _nameController.text,
-          description: _descriptionController.text,
-          theme: _selectedTheme!,
-          chairs: _chairs,
-          hostId: user.id,
-          hostName: user.name,
-          isPrivate: _isPrivate,
-          allowGuests: _allowGuests,
-          region: user.region,
-        );
+      name: _nameController.text,
+      description: _descriptionController.text,
+      theme: _selectedTheme!,
+      roomType: widget.roomType == 'video' ? 'video' : 'voice',
+      chairs: _chairs,
+      hostId: user.id,
+      hostName: user.name,
+      isPrivate: _isPrivate,
+      allowGuests: _allowGuests,
+      region: user.region,
+    );
 
     if (!mounted) return;
     if (ok) {
       final room = context.read<RoomProvider>().rooms.first;
-      Navigator.pushReplacementNamed(context, AppRoutes.room, arguments: {
-        'id': room.id,
-        'name': room.name,
-        'theme': room.theme,
-        'spectators': '${room.currentUsers}',
-        'chairs': '${room.chairs}',
-      });
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.room,
+        arguments: {
+          'id': room.id,
+          'name': room.name,
+          'theme': room.theme,
+          'roomType': room.roomType,
+          'spectators': '${room.currentUsers}',
+          'chairs': '${room.chairs}',
+        },
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.read<RoomProvider>().errorMessage ?? 'Erro ao criar sala'), backgroundColor: AppTheme.vermelho),
+        SnackBar(
+          content: Text(
+            context.read<RoomProvider>().errorMessage ?? 'Erro ao criar sala',
+          ),
+          backgroundColor: AppTheme.vermelho,
+        ),
       );
     }
   }
@@ -90,9 +117,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Criar Sala'),
-      ),
+      appBar: AppBar(title: const Text('Criar Sala')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: FadeTransition(
@@ -167,10 +192,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
                     prefixIcon: Icon(Icons.palette_outlined),
                   ),
                   items: _themes.map((theme) {
-                    return DropdownMenuItem(
-                      value: theme,
-                      child: Text(theme),
-                    );
+                    return DropdownMenuItem(value: theme, child: Text(theme));
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
@@ -194,7 +216,10 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Cadeiras', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Cadeiras',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
@@ -205,14 +230,23 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> with SingleTickerPr
                       label: Text('$n'),
                       selected: selected,
                       selectedColor: AppTheme.dourado,
-                      labelStyle: TextStyle(color: selected ? AppTheme.preto : AppTheme.branco, fontWeight: FontWeight.bold),
+                      labelStyle: TextStyle(
+                        color: selected ? AppTheme.preto : AppTheme.branco,
+                        fontWeight: FontWeight.bold,
+                      ),
                       backgroundColor: AppTheme.roxo,
                       onSelected: (_) => setState(() => _chairs = n),
                     );
                   }).toList(),
                 ),
                 const SizedBox(height: 8),
-                Text('Trono + ${ _chairs - 1 } convidados', style: const TextStyle(fontSize: 12, color: AppTheme.cinzaMedio)),
+                Text(
+                  'Trono + ${_chairs - 1} convidados',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.cinzaMedio,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 SwitchListTile(
                   title: const Text('Sala Privada'),

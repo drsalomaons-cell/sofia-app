@@ -5,7 +5,12 @@ class RoomModel {
   final String name;
   final String description;
   final String theme;
+
+  /// voice = sala de cadeiras/rádio; video = transmissão de vídeo.
+  final String roomType;
   final String coverUrl;
+  final String coverStyle;
+  final String background;
   final int chairs;
   final int currentUsers;
   final bool isPrivate;
@@ -25,7 +30,10 @@ class RoomModel {
     required this.name,
     required this.description,
     required this.theme,
+    this.roomType = 'voice',
     this.coverUrl = '',
+    this.coverStyle = 'gold',
+    this.background = 'midnight',
     required this.chairs,
     this.currentUsers = 0,
     this.isPrivate = false,
@@ -46,7 +54,10 @@ class RoomModel {
     String? name,
     String? description,
     String? theme,
+    String? roomType,
     String? coverUrl,
+    String? coverStyle,
+    String? background,
     int? chairs,
     int? currentUsers,
     bool? isPrivate,
@@ -66,7 +77,10 @@ class RoomModel {
       name: name ?? this.name,
       description: description ?? this.description,
       theme: theme ?? this.theme,
+      roomType: roomType ?? this.roomType,
       coverUrl: coverUrl ?? this.coverUrl,
+      coverStyle: coverStyle ?? this.coverStyle,
+      background: background ?? this.background,
       chairs: chairs ?? this.chairs,
       currentUsers: currentUsers ?? this.currentUsers,
       isPrivate: isPrivate ?? this.isPrivate,
@@ -89,7 +103,10 @@ class RoomModel {
       'name': name,
       'description': description,
       'theme': theme,
+      'roomType': roomType,
       'coverUrl': coverUrl,
+      'coverStyle': coverStyle,
+      'background': background,
       'chairs': chairs,
       'currentUsers': currentUsers,
       'isPrivate': isPrivate,
@@ -98,15 +115,19 @@ class RoomModel {
       'hostName': hostName,
       'participants': participants,
       'bannedUsers': bannedUsers,
-      'seats': seats.map((s) => {
-            'index': s.index,
-            'userId': s.userId,
-            'userName': s.userName,
-            'role': s.role,
-            'isMuted': s.isMuted,
-            'isLocked': s.isLocked,
-            'giftCount': s.giftCount,
-          }).toList(),
+      'seats': seats
+          .map(
+            (s) => {
+              'index': s.index,
+              'userId': s.userId,
+              'userName': s.userName,
+              'role': s.role,
+              'isMuted': s.isMuted,
+              'isLocked': s.isLocked,
+              'giftCount': s.giftCount,
+            },
+          )
+          .toList(),
       'earnings': earnings,
       'isActive': isActive,
       'createdAt': createdAt.toIso8601String(),
@@ -120,7 +141,10 @@ class RoomModel {
       name: json['name'],
       description: json['description'],
       theme: json['theme'],
+      roomType: json['roomType'] == 'video' ? 'video' : 'voice',
       coverUrl: json['coverUrl'] ?? '',
+      coverStyle: json['coverStyle'] ?? 'gold',
+      background: json['background'] ?? 'midnight',
       chairs: json['chairs'],
       currentUsers: json['currentUsers'] ?? 0,
       isPrivate: json['isPrivate'] ?? false,
@@ -129,8 +153,11 @@ class RoomModel {
       hostName: json['hostName'],
       participants: List<String>.from(json['participants'] ?? []),
       bannedUsers: List<String>.from(json['bannedUsers'] ?? []),
-      seats: (json['seats'] as List?)
-              ?.map((s) => SeatModel.fromJson(Map<String, dynamic>.from(s as Map)))
+      seats:
+          (json['seats'] as List?)
+              ?.map(
+                (s) => SeatModel.fromJson(Map<String, dynamic>.from(s as Map)),
+              )
               .toList() ??
           [],
       earnings: json['earnings']?.toDouble() ?? 0.0,

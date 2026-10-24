@@ -3,11 +3,12 @@ import 'package:sofia/models/transaction_model.dart';
 import 'package:sofia/models/user_model.dart';
 import 'package:sofia/services/economy_service.dart';
 import 'package:sofia/services/payment_service.dart';
+import 'package:sofia/services/api_client.dart';
 
 class WalletProvider extends ChangeNotifier {
   final PaymentService _paymentService = PaymentService();
   final EconomyService _economyService = EconomyService();
-  
+
   UserModel? _user;
   List<TransactionModel> _transactions = [];
   bool _isLoading = false;
@@ -75,7 +76,7 @@ class WalletProvider extends ChangeNotifier {
     Map<String, dynamic>? bankData,
   }) async {
     if (_user == null) return false;
-    
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -88,7 +89,7 @@ class WalletProvider extends ChangeNotifier {
         pixKey: pixKey,
         bankData: bankData,
       );
-      
+
       _transactions.insert(0, transaction);
       final profile = await _paymentService.getWalletProfile(_user!.id);
       _balance = profile.balance;
@@ -111,13 +112,13 @@ class WalletProvider extends ChangeNotifier {
     required Map<String, dynamic> bankData,
   }) async {
     if (_user == null || _isLoading) return false;
-    
+
     if (amount > _balance) {
       _errorMessage = 'Saldo insuficiente';
       notifyListeners();
       return false;
     }
-    
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -129,7 +130,7 @@ class WalletProvider extends ChangeNotifier {
         pixKey: pixKey,
         bankData: bankData,
       );
-      
+
       _transactions.insert(0, transaction);
       final profile = await _paymentService.getWalletProfile(_user!.id);
       _balance = profile.balance;
@@ -156,7 +157,7 @@ class WalletProvider extends ChangeNotifier {
     bool isOpeningEvent = false,
   }) async {
     if (_user == null) return;
-    
+
     try {
       final transaction = await _paymentService.processRoomEarning(
         userId: _user!.id,
@@ -168,7 +169,7 @@ class WalletProvider extends ChangeNotifier {
         roomGoalMet: roomGoalMet,
         isOpeningEvent: isOpeningEvent,
       );
-      
+
       _transactions.insert(0, transaction);
       final profile = await _paymentService.getWalletProfile(_user!.id);
       _balance = profile.balance;
@@ -186,14 +187,14 @@ class WalletProvider extends ChangeNotifier {
     required double amount,
   }) async {
     if (_user == null) return;
-    
+
     try {
       final transaction = await _paymentService.processReferralEarning(
         userId: _user!.id,
         referredUserId: referredUserId,
         amount: amount,
       );
-      
+
       _transactions.insert(0, transaction);
       _balance = await _paymentService.getBalance(_user!.id);
       notifyListeners();
@@ -229,6 +230,46 @@ class WalletProvider extends ChangeNotifier {
       pixKey: pixKey,
       amount: amount,
     );
+  }
+
+  /// Adiciona 10.000 moedas apenas pelo endpoint de desenvolvimento.
+  /// O backend valida NODE_ENV e a identidade pelo token; não confiar em userId do cliente.
+  Future<bool> addDevelopmentCoins() async {
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final result = await ApiClient.postRaw('/api/wallet/dev-add-coins', {});
+      if (result == null ||
+          result['_status'] != 200 ||
+          result['success'] != true) {
+        _errorMessage =
+            result?['error']?.toString() ??
+            'Crédito de teste disponível somente com backend em NODE_ENV=development.';
+        notifyListeners();
+        return false;
+      }
+      _coins =
+          double.tryParse(result['coins']?.toString() ?? '') ??
+          (_coins + 10000);
+      _balance =
+          double.tryParse(result['balance']?.toString() ?? '') ??
+          (_balance + 10000);
+      _diamonds =
+          double.tryParse(result['diamonds']?.toString() ?? '') ?? _diamonds;
+      if (_user != null) {
+        _user = _user!.copyWith(
+          coins: _coins,
+          balance: _balance,
+          diamonds: _diamonds,
+        );
+      }
+      notifyListeners();
+      return true;
+    } catch (error) {
+      _errorMessage = 'Falha ao adicionar moedas de teste: $error';
+      notifyListeners();
+      return false;
+    }
   }
 
   void clearError() {

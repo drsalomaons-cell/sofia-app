@@ -77,7 +77,7 @@ io.on('connection', (socket) => {
 });
 
 store.initStore().then(() => {
-  mountApiRoutes(app);
+  mountApiRoutes(app, io);
   server.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('╔══════════════════════════════════════════════════════════╗');

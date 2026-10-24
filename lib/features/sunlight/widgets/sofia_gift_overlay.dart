@@ -26,7 +26,8 @@ class _GiftBurst extends StatefulWidget {
   State<_GiftBurst> createState() => _GiftBurstState();
 }
 
-class _GiftBurstState extends State<_GiftBurst> with SingleTickerProviderStateMixin {
+class _GiftBurstState extends State<_GiftBurst>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
@@ -34,7 +35,12 @@ class _GiftBurstState extends State<_GiftBurst> with SingleTickerProviderStateMi
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: widget.effect.giftId == 'rocket' || widget.effect.giftId == 'car' ? 2200 : 1600),
+      duration: Duration(
+        milliseconds:
+            widget.effect.giftId == 'rocket' || widget.effect.giftId == 'car'
+            ? 2200
+            : 1600,
+      ),
     )..forward();
   }
 
@@ -46,21 +52,24 @@ class _GiftBurstState extends State<_GiftBurst> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
-    final isBig = widget.effect.giftId == 'rocket' || widget.effect.giftId == 'car';
+    final isBig =
+        widget.effect.giftId == 'rocket' || widget.effect.giftId == 'car';
     final size = isBig ? 160.0 : 120.0;
 
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
         final t = _controller.value;
-        final scale = t < 0.35 ? 0.2 + t * 2.7 : (t < 0.6 ? 1.15 - (t - 0.35) * 0.6 : 1.0 - (t - 0.6) * 0.375);
+        final scale = t < 0.35
+            ? 0.2 + t * 2.7
+            : (t < 0.6 ? 1.15 - (t - 0.35) * 0.6 : 1.0 - (t - 0.6) * 0.375);
         final opacity = t < 0.2 ? t * 5 : (t > 0.75 ? (1 - t) * 4 : 1.0);
 
-        return Opacity(
-          opacity: opacity.clamp(0.0, 1.0),
-          child: Transform.scale(
-            scale: scale,
-            child: child,
+        return Transform.translate(
+          offset: Offset(0, -72 * t),
+          child: Opacity(
+            opacity: opacity.clamp(0.0, 1.0),
+            child: Transform.scale(scale: scale, child: child),
           ),
         );
       },
@@ -77,17 +86,28 @@ class _GiftBurstState extends State<_GiftBurst> with SingleTickerProviderStateMi
             ],
           ),
           boxShadow: [
-            BoxShadow(color: SofiaPremiumTheme.gold.withValues(alpha: 0.6), blurRadius: 30, spreadRadius: 8),
+            BoxShadow(
+              color: SofiaPremiumTheme.gold.withValues(alpha: 0.6),
+              blurRadius: 30,
+              spreadRadius: 8,
+            ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(widget.effect.emoji, style: TextStyle(fontSize: isBig ? 64 : 48)),
+            Text(
+              widget.effect.emoji,
+              style: TextStyle(fontSize: isBig ? 64 : 48),
+            ),
             const SizedBox(height: 4),
             Text(
               widget.effect.senderName,
-              style: const TextStyle(color: SofiaPremiumTheme.goldSoft, fontSize: 11, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: SofiaPremiumTheme.goldSoft,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

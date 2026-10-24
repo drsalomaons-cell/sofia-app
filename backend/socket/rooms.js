@@ -18,7 +18,9 @@ function initRoomSocket(io) {
 
     socket.on('room:chat', (payload) => {
       const { roomId, message } = payload;
-      io.to(roomId).emit('room:chat', message);
+      // O remetente já inseriu a mensagem localmente; evite eco duplicado.
+      // Os demais membros recebem o evento normalmente.
+      socket.to(roomId).emit('room:chat', message);
     });
 
     socket.on('room:gift', (payload) => {

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:sofia/core/themes/app_theme.dart';
@@ -11,13 +11,11 @@ import 'package:sofia/services/face_recognition_service.dart';
 import 'package:sofia/services/branding_service.dart';
 import 'package:sofia/services/socket_service.dart';
 import 'package:sofia/widgets/sofia_mobile_shell.dart';
-import 'package:sofia/services/screen_protect_service.dart';
 import 'package:sofia/features/sunlight/services/sofia_gift_effect_service.dart';
 
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  await ScreenProtectService.enable();
 }
 
 class SofiaApp extends StatefulWidget {
@@ -68,7 +66,7 @@ class _SofiaAppState extends State<SofiaApp> {
             debugShowCheckedModeBanner: false,
             theme: AppTheme.themeForCover(coverId, isDark: false),
             darkTheme: AppTheme.themeForCover(coverId, isDark: true),
-            themeMode: ThemeMode.system,
+            themeMode: ThemeMode.dark,
             initialRoute: widget.initialRoute,
             onGenerateRoute: AppRoutes.generateRoute,
             builder: (context, child) {
@@ -80,3 +78,4 @@ class _SofiaAppState extends State<SofiaApp> {
     );
   }
 }
+

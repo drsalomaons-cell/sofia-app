@@ -3,8 +3,16 @@ import 'package:sofia/models/seat_model.dart';
 import 'package:sofia/services/api_client.dart';
 
 class RoomService {
-  Future<List<RoomModel>> getActiveRooms({String? region}) async {
-    final path = region != null ? '/api/rooms?region=$region' : '/api/rooms';
+  Future<List<RoomModel>> getActiveRooms({
+    String? region,
+    String? roomType,
+  }) async {
+    final query = <String, String>{};
+    if (region != null && region.isNotEmpty) query['region'] = region;
+    if (roomType != null && roomType.isNotEmpty) query['type'] = roomType;
+    final path = query.isEmpty
+        ? '/api/rooms'
+        : '/api/rooms?${query.entries.map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}').join('&')}';
     final data = await ApiClient.get(path);
     if (data != null && data['rooms'] is List) {
       return (data['rooms'] as List)
@@ -26,6 +34,7 @@ class RoomService {
     required String name,
     required String description,
     required String theme,
+    String roomType = 'voice',
     required int chairs,
     required String hostId,
     required String hostName,
@@ -38,6 +47,7 @@ class RoomService {
       'name': name,
       'description': description,
       'theme': theme,
+      'roomType': roomType == 'video' ? 'video' : 'voice',
       'chairs': chairs,
       'hostId': hostId,
       'hostName': hostName,
@@ -88,6 +98,21 @@ class RoomService {
       {'userId': userId, 'userName': userName},
     );
     if (data != null && data['room'] != null) {
+      return RoomModel.fromJson(Map<String, dynamic>.from(data['room'] as Map));
+    }
+    return null;
+  }
+
+  Future<RoomModel?> moderateRoom(
+    String roomId, {
+    required String action,
+    dynamic value,
+  }) async {
+    final data = await ApiClient.post('/api/rooms/$roomId/moderation', {
+      'action': action,
+      'value': value,
+    });
+    if (data != null && data['room'] is Map) {
       return RoomModel.fromJson(Map<String, dynamic>.from(data['room'] as Map));
     }
     return null;

@@ -33,7 +33,7 @@ class AppTheme {
   /// Seleciona tema conforme capa ativa do branding.
   static ThemeData themeForCover(String coverId, {required bool isDark}) {
     if (coverId == 'capa2') {
-      return isDark ? brilhoDarkTheme : brilhoLightTheme;
+      return isDark ? darkTheme : brilhoLightTheme;
     }
     return isDark ? darkTheme : lightTheme;
   }

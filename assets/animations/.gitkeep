@@ -1,0 +1,1 @@
+// Optional SVGA animations are placed in this directory. The rocket.svga asset is not bundled yet; the UI uses its animated Material fallback.

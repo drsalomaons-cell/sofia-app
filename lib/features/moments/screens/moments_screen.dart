@@ -6,36 +6,75 @@ class MomentsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        _momentCard('Maria', 'Entrei na sala Festa VIP 🎉', '2 min'),
-        _momentCard('Host Alpha', 'Meta da sala atingida! +2% bônus', '15 min'),
-        _momentCard('Sistema', 'Evento de abertura ativo — 72h', '1 h'),
-      ],
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF17102D), Color(0xFF0B1025), Color(0xFF080A1A)],
+        ),
+      ),
+      child: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          _momentCard('Maria', 'Entrei na sala Festa VIP 🎉', '2 min'),
+          _momentCard(
+            'Host Alpha',
+            'Meta da sala atingida! +2% bônus',
+            '15 min',
+          ),
+          _momentCard('Sistema', 'Evento de abertura ativo — 72h', '1 h'),
+        ],
+      ),
     );
   }
 
   Widget _momentCard(String author, String text, String time) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: AppTheme.roxo.withValues(alpha: 0.3),
+      color: const Color(0xCC14182F),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: AppTheme.dourado.withValues(alpha: 0.22)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(backgroundColor: AppTheme.dourado, child: Text(author[0], style: const TextStyle(color: AppTheme.preto, fontWeight: FontWeight.bold))),
+            CircleAvatar(
+              backgroundColor: AppTheme.dourado,
+              child: Text(
+                author[0],
+                style: const TextStyle(
+                  color: AppTheme.preto,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(author, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.dourado)),
+                  Text(
+                    author,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.dourado,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(text),
                   const SizedBox(height: 4),
-                  Text(time, style: const TextStyle(fontSize: 11, color: AppTheme.cinzaMedio)),
+                  Text(
+                    time,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.cinzaMedio,
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -1,7 +1,7 @@
-name: sofia
+﻿name: sofia
 description: "SOFIA - Social Platform"
 publish_to: 'none'
-version: 1.0.1+6004
+version: 1.0.4+12010
 
 environment:
   sdk: ^3.12.1
@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   
-  # Estado e navegação
+  # Estado e navegaÃ§Ã£o
   provider: ^6.1.1
   go_router: ^13.0.0
   
@@ -24,14 +24,14 @@ dependencies:
   dio: ^5.4.0
   http: ^1.2.0
   
-  # Utilitários
+  # UtilitÃ¡rios
   intl: ^0.20.2
   flutter_dotenv: ^5.1.0
   encrypt: ^5.0.3
   crypto: ^3.0.3
   flutter_secure_storage: ^9.0.0
   
-  # UI e ícones
+  # UI e Ã­cones
   flutter_svg: ^2.0.9
   cached_network_image: ^3.3.1
   shimmer: ^3.0.0
@@ -39,23 +39,25 @@ dependencies:
   # Chat e tempo real
   socket_io_client: ^2.0.3+1
   
-  # Permissões e mídia
+  # PermissÃµes e mÃ­dia
   permission_handler: ^11.3.1
   camera: ^0.12.1
   
   # Reconhecimento facial
   google_mlkit_face_detection: 0.13.2
 
-  # Proteção anti-captura (Android/iOS)
+  # ProteÃ§Ã£o anti-captura (Android/iOS)
   screen_protector: 1.4.2
   
-  # Internacionalização
+  # InternacionalizaÃ§Ã£o
   flutter_localizations:
     sdk: flutter
   easy_localization: ^3.0.5
   image_picker: ^1.2.4
   zego_express_engine: ^3.25.0
   path_provider: ^2.1.6
+  flutter_svga_easyplayer: 0.0.7
+  audioplayers: ^6.8.1
 
 dependency_overrides:
   camera_avfoundation: ^0.11.0+1
@@ -70,9 +72,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
   assets:
     - assets/images/
+    - assets/animations/
     - assets/images/branding/
     - assets/icons/
     - .env
@@ -82,3 +84,7 @@ flutter_launcher_icons:
   image_path: "assets/images/app_icon.png"
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/images/app_icon.png"
+
+
+
+

@@ -4,6 +4,9 @@ class UserModel {
   final String email;
   final String phone;
   final String gender;
+  final int? age;
+  final String? wealthLevel;
+  final int charmLevel;
   final String interestedIn;
   final String? photoUrl;
   final List<String> gallery;
@@ -30,6 +33,9 @@ class UserModel {
     required this.email,
     required this.phone,
     required this.gender,
+    this.age,
+    this.wealthLevel,
+    this.charmLevel = 0,
     required this.interestedIn,
     this.photoUrl,
     this.gallery = const [],
@@ -57,6 +63,9 @@ class UserModel {
     String? email,
     String? phone,
     String? gender,
+    int? age,
+    String? wealthLevel,
+    int? charmLevel,
     String? interestedIn,
     String? photoUrl,
     List<String>? gallery,
@@ -83,6 +92,9 @@ class UserModel {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       gender: gender ?? this.gender,
+      age: age ?? this.age,
+      wealthLevel: wealthLevel ?? this.wealthLevel,
+      charmLevel: charmLevel ?? this.charmLevel,
       interestedIn: interestedIn ?? this.interestedIn,
       photoUrl: photoUrl ?? this.photoUrl,
       gallery: gallery ?? this.gallery,
@@ -112,6 +124,9 @@ class UserModel {
       'email': email,
       'phone': phone,
       'gender': gender,
+      'age': age,
+      'wealthLevel': wealthLevel,
+      'charmLevel': charmLevel,
       'interestedIn': interestedIn,
       'photoUrl': photoUrl,
       'gallery': gallery,
@@ -141,6 +156,12 @@ class UserModel {
       email: json['email'],
       phone: json['phone'],
       gender: json['gender'],
+      age: int.tryParse(json['age']?.toString() ?? ''),
+      wealthLevel: json['wealthLevel']?.toString(),
+      charmLevel:
+          int.tryParse(json['charmLevel']?.toString() ?? '') ??
+          int.tryParse(json['points']?.toString() ?? '') ??
+          0,
       interestedIn: json['interestedIn'],
       photoUrl: json['photoUrl']?.toString(),
       gallery: (json['gallery'] as List<dynamic>? ?? const <dynamic>[])

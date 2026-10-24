@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:sofia/core/themes/app_theme.dart';
 import 'package:sofia/features/explore/screens/explore_hub_screen.dart';
 import 'package:sofia/features/live/screens/live_tab_screen.dart';
@@ -7,10 +8,8 @@ import 'package:sofia/features/moments/screens/moments_screen.dart';
 import 'package:sofia/features/profile/screens/profile_screen.dart';
 import 'package:sofia/providers/wallet_provider.dart';
 import 'package:sofia/routes/app_routes.dart';
-import 'package:sofia/widgets/sofia_cover_image.dart';
-import 'package:provider/provider.dart';
 
-/// Shell Sunlight Live adaptado SOFIA — 390×667 via SofiaMobileShell
+/// Navegação principal premium: Início, Momentos, Ao Vivo, Mensagens e Perfil.
 class MainNavigationShell extends StatefulWidget {
   final VoidCallback onLogout;
 
@@ -21,89 +20,131 @@ class MainNavigationShell extends StatefulWidget {
 }
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
-  int _currentIndex = 2;
+  int _currentIndex = 0;
 
-  static const _titles = ['AO VIVO', 'MOMENTOS', 'EXPLORAR', 'MENSAGENS'];
+  static const _titles = [
+    'INÍCIO',
+    'MOMENTOS',
+    'AO VIVO',
+    'MENSAGENS',
+    'MEU PERFIL',
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 2,
+        elevation: 0,
+        backgroundColor: const Color(0xFF080A1A),
         shadowColor: AppTheme.dourado.withValues(alpha: 0.2),
-        flexibleSpace: _currentIndex == 2
-            ? ClipRect(
-                child: Opacity(
-                  opacity: 0.15,
-                  child: SofiaCoverImage(variant: 'background', fit: BoxFit.cover),
-                ),
-              )
-            : null,
         title: Text(
           _titles[_currentIndex],
           style: const TextStyle(
             color: AppTheme.dourado,
             fontWeight: FontWeight.w900,
             letterSpacing: 1.2,
-            fontSize: 16,
+            fontSize: 15,
           ),
         ),
         centerTitle: true,
         actions: [
           Consumer<WalletProvider>(
-            builder: (context, wallet, _) {
-              return TextButton.icon(
+            builder: (context, wallet, _) => Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton.icon(
                 onPressed: () => Navigator.pushNamed(context, AppRoutes.wallet),
-                icon: const Icon(Icons.account_balance_wallet_outlined, color: AppTheme.dourado, size: 20),
-                label: Text(
-                  '${wallet.coins.toStringAsFixed(0)} 🪙',
-                  style: const TextStyle(color: AppTheme.dourado, fontWeight: FontWeight.bold, fontSize: 12),
+                icon: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: AppTheme.dourado,
+                  size: 19,
                 ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const CircleAvatar(
-              radius: 14,
-              backgroundColor: AppTheme.roxo,
-              child: Icon(Icons.person, size: 16, color: AppTheme.branco),
+                label: Text(
+                  wallet.coins.toStringAsFixed(0),
+                  style: const TextStyle(
+                    color: AppTheme.dourado,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0x331E2344),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    side: BorderSide(
+                      color: AppTheme.dourado.withValues(alpha: 0.24),
+                    ),
+                  ),
+                ),
+              ),
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute<void>(builder: (_) => ProfileScreen(onLogout: widget.onLogout)),
-              );
-            },
           ),
         ],
       ),
       body: SafeArea(
         child: IndexedStack(
-        index: _currentIndex,
-        children: [
-          const LiveTabScreen(),
-          const MomentsScreen(),
-          const ExploreHubScreen(),
-          MessagesScreen(onLogout: widget.onLogout),
-        ],
-      ),
+          index: _currentIndex,
+          children: [
+            const ExploreHubScreen(),
+            const MomentsScreen(),
+            const LiveTabScreen(),
+            MessagesScreen(onLogout: widget.onLogout),
+            ProfileScreen(onLogout: widget.onLogout, showAppBar: false),
+          ],
+        ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: AppTheme.dourado, width: 1.5)),
+          color: const Color(0xFF0D1024),
+          border: Border(
+            top: BorderSide(
+              color: AppTheme.dourado.withValues(alpha: 0.35),
+              width: 1,
+            ),
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x44000000),
+              blurRadius: 16,
+              offset: Offset(0, -4),
+            ),
+          ],
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (i) => setState(() => _currentIndex = i),
+          onTap: (index) => setState(() => _currentIndex = index),
           type: BottomNavigationBarType.fixed,
           selectedItemColor: AppTheme.dourado,
           unselectedItemColor: AppTheme.cinzaMedio,
-          backgroundColor: AppTheme.preto,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          selectedFontSize: 11,
+          unselectedFontSize: 10,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.videocam_rounded), label: 'Ao Vivo'),
-            BottomNavigationBarItem(icon: Icon(Icons.layers_rounded), label: 'Momentos'),
-            BottomNavigationBarItem(icon: Icon(Icons.explore_rounded), label: 'Explorar'),
-            BottomNavigationBarItem(icon: Icon(Icons.forum_rounded), label: 'Mensagens'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_rounded),
+              activeIcon: Icon(Icons.home_filled, size: 27),
+              label: 'Início',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.auto_awesome_mosaic_outlined),
+              activeIcon: Icon(Icons.auto_awesome_mosaic_rounded, size: 27),
+              label: 'Momentos',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.video_camera_front_outlined),
+              activeIcon: Icon(Icons.video_camera_front_rounded, size: 27),
+              label: 'Ao Vivo',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.forum_outlined),
+              activeIcon: Icon(Icons.forum_rounded, size: 27),
+              label: 'Mensagens',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline_rounded),
+              activeIcon: Icon(Icons.person_rounded, size: 27),
+              label: 'Perfil',
+            ),
           ],
         ),
       ),

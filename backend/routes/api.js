@@ -30,7 +30,7 @@ const APP_GIFT_CATALOG = [
   { id: 'diamond', name: 'Diamante', price: 1000, tier: 'mythic', emoji: '💎' },
 ];
 
-function mountApiRoutes(app) {
+function mountApiRoutes(app, io) {
   loadEconomyConfig();
 
   // ── Auth ──
@@ -145,8 +145,39 @@ function mountApiRoutes(app) {
       vipTier: vip.id,
       vipTag: vip.tag,
       points: user.points,
+      age: Number.isInteger(user.age) ? user.age : null,
+      wealthLevel: user.wealthLevel || vip.tag,
+      charmLevel: Number(user.charmLevel ?? user.points ?? 0),
       hostLevel: user.hostLevel || 0,
       hostSalary: economy.getHostSalary(user.hostLevel || 0),
+    });
+  });
+
+  app.post('/api/wallet/dev-add-coins', requireAuth, (req, res) => {
+    // Ferramenta de teste estritamente local: nunca expor em staging/produção.
+    if (process.env.NODE_ENV !== 'development') {
+      return res.status(404).json({ error: 'Rota não encontrada' });
+    }
+    const userId = req.user.id;
+    const users = store.getUsers();
+    const index = users.findIndex((user) => user.id === userId);
+    if (index < 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+    users[index] = economy.applyCoinsAndDiamonds(users[index], { coins: 10000 });
+    store.saveUsers(users);
+    store.addTransaction({
+      id: txId(),
+      userId,
+      type: 'dev_coins',
+      amount: 10000,
+      description: 'Crédito de teste (somente desenvolvimento)',
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+    });
+    return res.json({
+      success: true,
+      coins: Number(users[index].coins ?? users[index].balance ?? 0),
+      balance: Number(users[index].balance ?? users[index].coins ?? 0),
+      diamonds: Number(users[index].diamonds ?? 0),
     });
   });
 
@@ -180,6 +211,7 @@ function mountApiRoutes(app) {
     if (shouldCredit) {
       users[idx] = economy.applyCoinsAndDiamonds(users[idx], { coins: amount });
       users[idx].totalSpend = (users[idx].totalSpend || 0) + amount;
+      users[idx].wealthLevel = economy.getVipTier(users[idx].totalSpend).tag;
       users[idx] = economy.addXp(users[idx], 5);
       syncUserLevelsAndVip();
       store.saveUsers(users);
@@ -263,6 +295,8 @@ function mountApiRoutes(app) {
     }
 
     users[idx] = economy.applyCoinsAndDiamonds(users[idx], { coins: bonus });
+    users[idx].totalEarnings = Number(users[idx].totalEarnings || 0) + Number(bonus || 0);
+    users[idx].charmLevel = Math.floor(users[idx].totalEarnings);
     users[idx].points = (users[idx].points || 0) + Math.round(bonus);
     users[idx] = economy.addXp(users[idx], isHost ? 10 : 5);
     if (isHost) {
@@ -367,6 +401,72 @@ function mountApiRoutes(app) {
   app.get('/api/rooms/:id', (req, res) => {
     const room = store.findRoom(req.params.id);
     if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
+    res.json({ room });
+  });
+
+  // Personalização e limpeza de sala: autenticado e restrito a dono/moderador.
+  app.post('/api/rooms/:id/moderation', requireAuth, (req, res) => {
+    const { action, value } = req.body || {};
+    const actor = store.findUser(req.user.id);
+    const rooms = store.getRooms();
+    const index = rooms.findIndex((room) => room.id === req.params.id);
+    if (index < 0) return res.status(404).json({ error: 'Sala não encontrada' });
+    const room = rooms[index];
+    if (!actor || !roles.canModerateRoom(actor, room)) {
+      return res.status(403).json({ error: 'Sem permissão para moderar esta sala' });
+    }
+
+    const now = new Date().toISOString();
+    switch (action) {
+      case 'clear_room':
+      case 'clear_text':
+        room.chatClearedAt = now;
+        room.lastCleanedAt = now;
+        if (io) io.to(room.id).emit('room:chat_clear', { roomId: room.id, clearedAt: now });
+        break;
+      case 'cover':
+        if (!['gold', 'neon', 'violet'].includes(value)) {
+          return res.status(400).json({ error: 'Capa inválida' });
+        }
+        room.coverStyle = value;
+        break;
+      case 'background':
+        if (!['midnight', 'violet', 'ocean'].includes(value)) {
+          return res.status(400).json({ error: 'Fundo inválido' });
+        }
+        room.background = value;
+        break;
+      case 'chairs': {
+        const requested = Number(value);
+        if (!Number.isInteger(requested) || requested < 4 || requested > 30) {
+          return res.status(400).json({ error: 'A quantidade de cadeiras deve ficar entre 4 e 30' });
+        }
+        if (requested < room.chairs) {
+          return res.status(400).json({ error: 'Esta ação só aumenta a quantidade de cadeiras' });
+        }
+        const seats = Array.isArray(room.seats) ? [...room.seats] : [];
+        for (let seatIndex = seats.length; seatIndex < requested; seatIndex += 1) {
+          seats.push({
+            index: seatIndex,
+            userId: null,
+            userName: null,
+            role: 'participant',
+            isMuted: false,
+            isLocked: false,
+            giftCount: 0,
+          });
+        }
+        room.chairs = requested;
+        room.seats = seats;
+        break;
+      }
+      default:
+        return res.status(400).json({ error: 'Ação de moderação inválida' });
+    }
+
+    rooms[index] = room;
+    store.saveRooms(rooms);
+    if (io) io.to(room.id).emit('room:settings', { room });
     res.json({ room });
   });
 
@@ -495,11 +595,12 @@ function mountApiRoutes(app) {
     const room = rooms[idx];
     room.participants = room.participants.filter((p) => p !== userId);
     room.seats = room.seats.map((s) =>
-      s.userId === userId ? { ...s, userId: null, userName: null, role: 'participant', isMuted: false } : s
+      s.userId === userId ? { ...s, userId: null, userName: null, photoUrl: null, level: 1, role: 'participant', isMuted: false } : s
     );
     room.currentUsers = room.participants.length;
     rooms[idx] = room;
     store.saveRooms(rooms);
+    if (io) io.to(room.id).emit('room:state', { room });
     res.json({ room });
   });
 
@@ -516,13 +617,24 @@ function mountApiRoutes(app) {
       return res.status(403).json({ error: 'Cadeira indisponível' });
     }
     room.seats = room.seats.map((s) => {
-      if (s.userId === userId) return { ...s, userId: null, userName: null };
+      if (s.userId === userId) {
+        return {
+          ...s,
+          userId: null,
+          userName: null,
+          photoUrl: null,
+          level: 1,
+          role: 'participant',
+        };
+      }
       return s;
     });
     room.seats[seatIndex] = {
       ...room.seats[seatIndex],
       userId,
       userName,
+      photoUrl: seatingUser?.photoUrl || null,
+      level: Number(seatingUser?.level) || 1,
       role: userId === room.hostId ? 'owner' : 'participant',
     };
     if (!room.participants.includes(userId)) {
@@ -531,6 +643,7 @@ function mountApiRoutes(app) {
     }
     rooms[idx] = room;
     store.saveRooms(rooms);
+    if (io) io.to(room.id).emit('room:state', { room });
     res.json({ room, seat: room.seats[seatIndex] });
   });
 
@@ -583,11 +696,12 @@ function mountApiRoutes(app) {
     if (!room.bannedUsers.includes(targetUserId)) room.bannedUsers.push(targetUserId);
     room.participants = room.participants.filter((p) => p !== targetUserId);
     room.seats = room.seats.map((s) =>
-      s.userId === targetUserId ? { ...s, userId: null, userName: null } : s
+      s.userId === targetUserId ? { ...s, userId: null, userName: null, photoUrl: null, level: 1 } : s
     );
     room.currentUsers = room.participants.length;
     rooms[idx] = room;
     store.saveRooms(rooms);
+    if (io) io.to(room.id).emit('room:state', { room });
     res.json({ room });
   });
 
@@ -596,8 +710,12 @@ function mountApiRoutes(app) {
     res.json({ gifts: APP_GIFT_CATALOG });
   });
 
-  app.post('/api/gifts/send', (req, res) => {
-    const { senderId, recipientId, giftId, roomId } = req.body;
+  app.post('/api/gifts/send', requireAuth, (req, res) => {
+    const { recipientId, giftId, roomId } = req.body;
+    const senderId = req.user.id;
+    if (req.body.senderId && req.body.senderId !== senderId) {
+      return res.status(403).json({ error: 'O remetente não corresponde à sessão autenticada' });
+    }
     const gift = APP_GIFT_CATALOG.find((g) => g.id === giftId);
     if (!gift) return res.status(404).json({ error: 'Presente não encontrado' });
 
@@ -617,13 +735,17 @@ function mountApiRoutes(app) {
 
     try {
       users[sIdx] = economy.applyBalanceChange(users[sIdx], -gift.price);
+      users[sIdx].totalSpend = Number(users[sIdx].totalSpend || 0) + Number(gift.price || 0);
+      users[sIdx].wealthLevel = economy.getVipTier(users[sIdx].totalSpend).tag;
     } catch (e) {
       return res.status(400).json({ error: 'Saldo insuficiente' });
     }
 
     const recipientGain = economy.calculateEarning('gift_received', { amount: gift.price });
     users[rIdx] = economy.applyBalanceChange(users[rIdx], recipientGain);
+    users[rIdx].totalEarnings = Number(users[rIdx].totalEarnings || 0) + Number(recipientGain || 0);
     users[rIdx].points = (users[rIdx].points || 0) + gift.price;
+    users[rIdx].charmLevel = Math.floor(users[rIdx].totalEarnings);
     store.saveUsers(users);
 
     store.addGiftLog({ from: senderId, to: recipientId, giftId, roomId, amount: gift.price });

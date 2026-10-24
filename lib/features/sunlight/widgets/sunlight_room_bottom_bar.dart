@@ -6,13 +6,9 @@ import 'package:sofia/features/sunlight/theme/sunlight_room_layout.dart';
 class SunlightRoomBottomBar extends StatelessWidget {
   final bool micActive;
   final bool chatOpen;
-  final bool roomMuted;
   final VoidCallback onMic;
   final VoidCallback onChat;
   final VoidCallback onGift;
-  final VoidCallback onRoomMute;
-  final VoidCallback onLeave;
-  final VoidCallback onRanking;
   final VoidCallback onGames;
   final VoidCallback onEnvelope;
 
@@ -20,13 +16,9 @@ class SunlightRoomBottomBar extends StatelessWidget {
     super.key,
     required this.micActive,
     required this.chatOpen,
-    required this.roomMuted,
     required this.onMic,
     required this.onChat,
     required this.onGift,
-    required this.onRoomMute,
-    required this.onLeave,
-    required this.onRanking,
     required this.onGames,
     required this.onEnvelope,
   });
@@ -55,6 +47,13 @@ class SunlightRoomBottomBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _btn(
+              micActive ? Icons.mic : Icons.mic_off,
+              'Microfone',
+              micActive ? AppTheme.dourado : AppTheme.cinzaMedio,
+              scale,
+              onMic,
+            ),
+            _btn(
               Icons.chat_bubble_outline,
               'Chat',
               chatOpen ? AppTheme.dourado : AppTheme.branco,
@@ -62,29 +61,8 @@ class SunlightRoomBottomBar extends StatelessWidget {
               onChat,
             ),
             _btn(
-              micActive ? Icons.mic : Icons.mic_off,
-              micActive ? 'Mic ligado' : 'Mic desligado',
-              micActive ? AppTheme.dourado : AppTheme.cinzaMedio,
-              scale,
-              onMic,
-            ),
-            _btn(
-              roomMuted ? Icons.volume_off : Icons.volume_up,
-              roomMuted ? 'Ouvir' : 'Silenciar',
-              roomMuted ? AppTheme.vermelho : AppTheme.branco,
-              scale,
-              onRoomMute,
-            ),
-            _btn(
-              Icons.emoji_events_outlined,
-              'Ranking',
-              AppTheme.dourado,
-              scale,
-              onRanking,
-            ),
-            _btn(
               Icons.card_giftcard_outlined,
-              'Presentes',
+              'Presente',
               AppTheme.lilas,
               scale,
               onGift,
@@ -103,7 +81,6 @@ class SunlightRoomBottomBar extends StatelessWidget {
               scale,
               onEnvelope,
             ),
-            _btn(Icons.exit_to_app, 'Sair', AppTheme.vermelho, scale, onLeave),
           ],
         ),
       ),
