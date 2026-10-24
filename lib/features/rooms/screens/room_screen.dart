@@ -4,7 +4,6 @@ import 'package:sofia/features/auth/providers/auth_provider.dart';
 import 'package:sofia/services/room_service.dart';
 import 'package:sofia/features/sunlight/widgets/rocket_launch_overlay.dart';
 import 'package:sofia/features/sunlight/widgets/sofia_premium_gift_panel.dart';
-import 'package:sofia/widgets/avatar_com_moldura.dart';
 
 class RoomScreen extends StatefulWidget {
   final String? roomId;
@@ -69,10 +68,8 @@ class _RoomScreenState extends State<RoomScreen> {
         }
       }
     }
-    if (recipientId == null) {
-      messenger.showSnackBar(const SnackBar(content: Text('Aguarde outro participante entrar na sala para enviar presentes.')));
-      return;
-    }
+    // TESTE TEMPORARIO: se nao houver outro participante, envia para si mesmo.
+    recipientId ??= user.id;
     showSofiaPremiumGiftPanel(
       context,
       roomId: roomId,
@@ -94,21 +91,26 @@ class _RoomScreenState extends State<RoomScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Camada 1: arte de fundo exportada do Stitch.
-          Image.asset(
-            'assets/images/rooms/sala_principal.png',
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stack) => const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF17243A), Color(0xFF080A17)],
-                ),
+          // Fundo premium em Flutter puro (sem imagem).
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF2A1458), Color(0xFF141A3D), Color(0xFF070918)],
+                stops: [0.0, 0.5, 1.0],
               ),
             ),
           ),
-          Container(color: const Color(0x66050916)),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0, -0.55),
+                radius: 0.95,
+                colors: [Color(0x3352D6F5), Color(0x00000000)],
+              ),
+            ),
+          ),
           SafeArea(
             child: Column(
               children: [
@@ -234,7 +236,7 @@ class _RoomScreenState extends State<RoomScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                AvatarComMoldura(tipo: occupied ? 'oficial' : 'host', nivel: (index % 5) + 1, tamanho: 64),
+                                _SeatAvatar(occupied: occupied),
                                 const SizedBox(height: 7),
                                 Text(
                                   occupied ? 'Você' : 'Lugar ${index + 1}',
@@ -319,22 +321,28 @@ class _RoomScreenState extends State<RoomScreen> {
               ],
             ),
           ),
-          // Camada 5: botão do foguete e overlay real com PNG lv1.
+          // Botão flutuante do foguete (Flutter puro).
           Positioned(
-            right: 14,
-            bottom: 88,
-            child: FloatingActionButton(
-              heroTag: 'room-rocket-button',
-              mini: false,
-              backgroundColor: const Color(0xFFFFD76A),
-              foregroundColor: const Color(0xFF101629),
-              onPressed: () => setState(() => _showRocket = true),
-              child: Image.asset(
-                'assets/images/rockets/lv1.png',
-                width: 42,
-                height: 42,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stack) => const Icon(Icons.rocket_launch_rounded),
+            right: 16,
+            bottom: MediaQuery.of(context).padding.bottom + 86,
+            child: GestureDetector(
+              onTap: () => setState(() => _showRocket = true),
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFFFE7A1), Color(0xFFFFB300)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(color: Color(0x88FFB300), blurRadius: 16, spreadRadius: 1),
+                    BoxShadow(color: Color(0x5531D7FF), blurRadius: 24, spreadRadius: 2),
+                  ],
+                ),
+                child: const Icon(Icons.rocket_launch_rounded, color: Color(0xFF101629), size: 28),
               ),
             ),
           ),
@@ -372,4 +380,41 @@ class _RoundButton extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Avatar da cadeira: CircleAvatar com anel/moldura desenhado em Flutter puro.
+class _SeatAvatar extends StatelessWidget {
+  final bool occupied;
+  const _SeatAvatar({required this.occupied});
+
+  @override
+  Widget build(BuildContext context) {
+    final ring = occupied
+        ? const [Color(0xFFFFE7A1), Color(0xFFFFB300), Color(0xFFFFE7A1)]
+        : const [Color(0xFF8CE9F4), Color(0xFF7B5CFF), Color(0xFF8CE9F4)];
+    return SizedBox(
+      width: 64,
+      height: 64,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: SweepGradient(colors: ring),
+              boxShadow: [BoxShadow(color: ring[1].withValues(alpha: 0.45), blurRadius: 12, spreadRadius: 1)],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.all(3.5),
+            child: CircleAvatar(
+              radius: 28,
+              backgroundColor: Color(0xFF1B2140),
+              child: Icon(Icons.person_rounded, color: Colors.white70, size: 30),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

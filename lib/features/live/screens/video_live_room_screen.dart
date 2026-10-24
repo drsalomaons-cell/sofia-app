@@ -122,7 +122,8 @@ class _VideoLiveRoomScreenState extends State<VideoLiveRoomScreen> {
       );
       break;
     }
-    if (recipientId == null || recipientId == user.id) {
+    recipientId ??= user.id; // TESTE TEMPORARIO: permite enviar para si mesmo
+    if (recipientId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Aguarde outro participante para enviar presentes.'),

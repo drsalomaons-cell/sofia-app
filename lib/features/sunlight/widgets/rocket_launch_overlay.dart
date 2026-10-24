@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +15,6 @@ class RocketLaunchOverlay extends StatefulWidget {
 class _RocketLaunchOverlayState extends State<RocketLaunchOverlay> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   final AudioPlayer _audio = AudioPlayer();
-  String get _asset => 'assets/images/rockets/lv${widget.level.clamp(1, 3)}.png';
   @override
   void initState() {
     super.initState();
@@ -39,8 +38,14 @@ class _RocketLaunchOverlayState extends State<RocketLaunchOverlay> with SingleTi
           Positioned(left: 0, right: 0, top: screen.height * (1.15 - 1.55 * t), height: screen.height * .62,
             child: Center(child: Stack(alignment: Alignment.center, children: [
               if (widget.avatarUrl != null && widget.avatarUrl!.isNotEmpty) Positioned(top: 0, child: CircleAvatar(radius: 27, backgroundImage: NetworkImage(widget.avatarUrl!))),
-              Image.asset(_asset, fit: BoxFit.contain, width: screen.width * .92, height: screen.height * .60,
-                errorBuilder: (context, error, stack) => const Icon(Icons.rocket_launch, color: Color(0xFFFFD76A), size: 120)),
+              ShaderMask(
+                shaderCallback: (rect) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFFFFF3C4), Color(0xFFFFB300), Color(0xFFFF6B3D)],
+                ).createShader(rect),
+                child: Icon(Icons.rocket_launch_rounded, color: Colors.white, size: screen.width * .42),
+              ),
             ]))),
           if (t > .78) Center(child: Container(width: 180, height: 180, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: const Color(0xFFFFD76A), width: 3), boxShadow: const [BoxShadow(color: Color(0xAA31D7FF), blurRadius: 45, spreadRadius: 15)]))),
           SafeArea(child: Align(alignment: Alignment.topCenter, child: Padding(padding: const EdgeInsets.fromLTRB(24, 22, 24, 0), child: Column(mainAxisSize: MainAxisSize.min, children: [

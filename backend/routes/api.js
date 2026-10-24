@@ -724,7 +724,10 @@ function mountApiRoutes(app, io) {
       recipientId,
       recentGifts: store.getGiftLog(),
     });
-    if (analysis.blocked) {
+    // TESTE TEMPORARIO: permite presente para o proprio ID (desligue com ALLOW_SELF_GIFT_TEST=false).
+    const allowSelfGiftTest = process.env.ALLOW_SELF_GIFT_TEST !== 'false';
+    const isSelfGift = senderId === recipientId;
+    if (analysis.blocked && !(allowSelfGiftTest && isSelfGift)) {
       return res.status(403).json({ error: 'Presente bloqueado por segurança', analysis });
     }
 
