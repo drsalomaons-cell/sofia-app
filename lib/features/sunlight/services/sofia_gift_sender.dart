@@ -105,6 +105,7 @@ Future<bool> sendSofiaGift(
     context.read<SocketService>().emitGift(roomId, {
       'senderId': user.id,
       'senderName': user.name,
+      'senderPhotoUrl': user.photoUrl,
       'recipientId': recipientId,
       'giftId': gift.id,
       'giftName': gift.name,

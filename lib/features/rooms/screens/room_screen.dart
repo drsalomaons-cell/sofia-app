@@ -1,12 +1,23 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sofia/features/auth/providers/auth_provider.dart';
-import 'package:sofia/services/room_service.dart';
-import 'package:sofia/services/socket_service.dart';
 import 'package:sofia/features/sunlight/widgets/rocket_launch_overlay.dart';
 import 'package:sofia/features/sunlight/widgets/sofia_premium_gift_panel.dart';
+import 'package:sofia/models/room_model.dart';
+import 'package:sofia/models/seat_model.dart';
+import 'package:sofia/services/room_service.dart';
+import 'package:sofia/services/socket_service.dart';
+
+// Paleta extraída do layout Stitch (HTML/Tailwind).
+const _bgTop = Color(0xFF111225);
+const _bgBottom = Color(0xFF1D1E32);
+const _seatBorder = Color(0xFF3A494B);
+const _seatIcon = Color(0xFF7A8F91);
+const _neonA = Color(0xFF00F2FE);
+const _neonB = Color(0xFF6807BA);
 
 class RoomScreen extends StatefulWidget {
   final String? roomId;
@@ -34,18 +45,27 @@ class _RoomScreenState extends State<RoomScreen> {
   final Set<String> _messageIds = <String>{};
   SocketService? _socket;
   String? _userId;
+  RoomModel? _room;
+  bool _micOn = false;
+  bool _showChat = false;
+
+  bool _showRocket = false;
+  int _rocketSeq = 0;
+  String _rocketSender = '';
+  String? _rocketAvatar;
+
   String? _entryAsset;
   String _entryName = '';
   Timer? _entryTimer;
   static const _entries = ['leao', 'dragao', 'fenix', 'merlin', 'rei', 'carro'];
-  bool _micOn = false;
-  bool _showChat = false;
-  bool _showRocket = false;
+
+  String _lastSentText = '';
+  DateTime _lastSentAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _joinRoomRealtime());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
 
   @override
@@ -59,7 +79,7 @@ class _RoomScreenState extends State<RoomScreen> {
     super.dispose();
   }
 
-  void _joinRoomRealtime() {
+  Future<void> _bootstrap() async {
     if (!mounted) return;
     final user = context.read<AuthProvider>().user;
     if (user == null) return;
@@ -67,6 +87,7 @@ class _RoomScreenState extends State<RoomScreen> {
     _showEntry(user.name, self: true);
     final roomId = widget.roomId;
     if (roomId == null) return;
+
     final socket = context.read<SocketService>();
     _socket = socket;
     socket.joinRoom(roomId, user.id, user.name);
@@ -87,6 +108,37 @@ class _RoomScreenState extends State<RoomScreen> {
       final name = data['userName']?.toString() ?? '';
       if (name.isNotEmpty) _showEntry(name);
     });
+    socket.onRoomState((data) {
+      final raw = data['room'];
+      if (!mounted || raw is! Map) return;
+      setState(() => _room = RoomModel.fromJson(Map<String, dynamic>.from(raw)));
+    });
+    socket.onGift((data) {
+      if (!mounted) return;
+      // O próprio remetente já viu o efeito localmente.
+      if (data['senderId']?.toString() == _userId) return;
+      if (data['giftId']?.toString() == 'rocket') {
+        _launchRocket(
+          data['senderName']?.toString() ?? '',
+          data['senderPhotoUrl']?.toString(),
+        );
+      }
+    });
+
+    try {
+      final room = await RoomService().getRoomById(roomId);
+      if (mounted && room != null) setState(() => _room = room);
+    } catch (_) {}
+  }
+
+  void _launchRocket(String name, String? photoUrl) {
+    if (!mounted) return;
+    setState(() {
+      _rocketSender = name;
+      _rocketAvatar = photoUrl;
+      _rocketSeq++;
+      _showRocket = true;
+    });
   }
 
   void _showEntry(String name, {bool self = false}) {
@@ -101,34 +153,19 @@ class _RoomScreenState extends State<RoomScreen> {
     });
   }
 
-  void _showRoomMenu() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF11182A),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.info_outline, color: Color(0xFFFFD76A)),
-              title: const Text('Informações da sala', style: TextStyle(color: Colors.white)),
-              subtitle: Text('ID: ${widget.roomId ?? 'local'}', style: const TextStyle(color: Colors.white60)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.close, color: Colors.white70),
-              title: const Text('Fechar menu', style: TextStyle(color: Colors.white)),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
   void _sendMessage() {
     final text = _chatController.text.trim();
     if (text.isEmpty) return;
+    // Trava contra disparo duplo (teclado + botão) do mesmo texto.
+    final now = DateTime.now();
+    if (text == _lastSentText && now.difference(_lastSentAt).inMilliseconds < 700) {
+      return;
+    }
+    _lastSentText = text;
+    _lastSentAt = now;
+
     final user = context.read<AuthProvider>().user;
-    final id = '${user?.id ?? 'local'}-${DateTime.now().microsecondsSinceEpoch}';
+    final id = '${user?.id ?? 'local'}-${now.microsecondsSinceEpoch}';
     final sender = user?.name ?? 'Você';
     _messageIds.add(id); // o eco do servidor (se houver) é ignorado por este id
     setState(() {
@@ -146,19 +183,61 @@ class _RoomScreenState extends State<RoomScreen> {
       });
     }
   }
+
+  Future<void> _takeSeat(int index) async {
+    final user = context.read<AuthProvider>().user;
+    final roomId = widget.roomId;
+    if (user == null || roomId == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final updated = await RoomService().takeSeat(roomId, index, user.id, user.name);
+      if (mounted && updated != null) setState(() => _room = updated);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _leaveRoom() async {
+    final user = context.read<AuthProvider>().user;
+    final roomId = widget.roomId;
+    final nav = Navigator.of(context);
+    if (user != null && roomId != null) {
+      try {
+        await RoomService().leaveRoom(roomId, user.id);
+      } catch (_) {}
+    }
+    if (mounted) nav.maybePop();
+  }
+
   Future<void> _openGifts() async {
     final messenger = ScaffoldMessenger.of(context);
     final user = context.read<AuthProvider>().user;
     final roomId = widget.roomId;
     if (user == null || roomId == null) {
-      messenger.showSnackBar(const SnackBar(content: Text('Entre com sua conta em uma sala para enviar presentes.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Entre com sua conta em uma sala para enviar presentes.')),
+      );
       return;
     }
-    final room = await RoomService().getRoomById(roomId);
-    if (!mounted) return;
+    var room = _room;
+    if (room == null) {
+      try {
+        room = await RoomService().getRoomById(roomId);
+      } catch (_) {}
+      if (!mounted) return;
+    }
     String? recipientId;
     if (room != null) {
-      final candidates = <String?>[room.hostId, ...room.participants.cast<String?>()];
+      final candidates = <String?>[
+        ...room.seats.map((s) => s.userId),
+        room.hostId,
+        ...room.participants,
+      ];
       for (final id in candidates) {
         if (id != null && id.isNotEmpty && id != user.id) {
           recipientId = id;
@@ -171,154 +250,398 @@ class _RoomScreenState extends State<RoomScreen> {
     showSofiaPremiumGiftPanel(
       context,
       roomId: roomId,
-      roomName: widget.roomName,
+      roomName: room?.name ?? widget.roomName,
       isHost: room?.hostId == user.id,
-      participantCount: widget.spectatorCount,
+      participantCount: room?.currentUsers ?? widget.spectatorCount,
       recipientId: recipientId,
       onGiftSent: (gift, combo) {
-        if (gift.id == 'rocket' && mounted) setState(() => _showRocket = true);
+        if (gift.id == 'rocket') _launchRocket(user.name, user.photoUrl);
       },
+    );
+  }
+
+  void _showRoomMenu() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: _bgBottom,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.info_outline, color: _neonA),
+              title: const Text('Informações da sala', style: TextStyle(color: Colors.white)),
+              subtitle: Text(
+                'ID: ${widget.roomId ?? 'local'}',
+                style: const TextStyle(color: Colors.white60),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.close, color: Colors.white70),
+              title: const Text('Fechar menu', style: TextStyle(color: Colors.white)),
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final count = widget.chairCount.clamp(1, 30);
+    final me = context.read<AuthProvider>().user;
+    final room = _room;
+    final title = (room != null && room.name.isNotEmpty)
+        ? room.name
+        : (widget.roomName.isNotEmpty ? widget.roomName : 'Audio Room Live');
+    final idText = widget.roomId ?? room?.id ?? 'local';
+    final owner = (room != null && room.hostName.isNotEmpty) ? room.hostName : '-';
+    final seatCount = (room?.seats.length ?? widget.chairCount).clamp(1, 30).toInt();
+    final online = room?.currentUsers ?? widget.spectatorCount;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF080A17),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Fundo premium em Flutter puro (sem imagem).
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF2A1458), Color(0xFF141A3D), Color(0xFF070918)],
-                stops: [0.0, 0.5, 1.0],
-              ),
-            ),
+      backgroundColor: _bgTop,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [_bgTop, _bgBottom],
           ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0, -0.55),
-                radius: 0.95,
-                colors: [Color(0x3352D6F5), Color(0x00000000)],
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                // Banner da sala (capa) com gradiente escuro para legibilidade.
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(22),
-                    child: SizedBox(
-                      height: 150,
-                      width: double.infinity,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.asset(
-                            'assets/images/rooms/sala_principal.png',
-                            fit: BoxFit.cover,
-                            alignment: Alignment.topCenter,
-                            cacheWidth: 1000,
-                            errorBuilder: (context, error, stack) => const DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(colors: [Color(0xFF3B1D7A), Color(0xFF1B2A6B)]),
-                              ),
-                            ),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
+                  // Topo: vidro translúcido.
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(22),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0x14FFFFFF),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(color: const Color(0x1FFFFFFF)),
                           ),
-                          const DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Color(0x99070918), Color(0x33070918), Color(0xEE070918)],
-                                stops: [0.0, 0.4, 1.0],
+                          child: Row(
+                            children: [
+                              _CircleAction(
+                                icon: Icons.arrow_back_rounded,
+                                size: 40,
+                                onTap: () => Navigator.of(context).maybePop(),
                               ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    _RoundButton(
-                                      icon: Icons.arrow_back_rounded,
-                                      onTap: () => Navigator.of(context).maybePop(),
-                                    ),
-                                    const Spacer(),
-                                    _RoundButton(icon: Icons.more_horiz_rounded, onTap: _showRoomMenu),
-                                  ],
-                                ),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            widget.roomName,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w900,
-                                              shadows: [Shadow(color: Colors.black54, blurRadius: 6)],
-                                            ),
-                                          ),
-                                          const SizedBox(height: 3),
-                                          Text(
-                                            'SALA  ${widget.roomTheme}  •  $count lugares',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: Color(0xFFFFE7A1),
-                                              fontSize: 11,
-                                              letterSpacing: 1.0,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ],
+                                    Text(
+                                      title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'ID: $idText · Owner: $owner',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Color(0x99FFFFFF),
+                                        fontSize: 10.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x33000000),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: const Color(0x6678F0C4)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xAA000000),
-                                        borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(color: const Color(0x6678F0C4)),
+                                      width: 7,
+                                      height: 7,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF78F0C4),
+                                        shape: BoxShape.circle,
                                       ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            width: 7,
-                                            height: 7,
-                                            decoration: const BoxDecoration(color: Color(0xFF78F0C4), shape: BoxShape.circle),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            '${widget.spectatorCount} online',
-                                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
-                                          ),
-                                        ],
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '$online online',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                   ],
                                 ),
+                              ),
+                              const SizedBox(width: 8),
+                              _CircleAction(
+                                icon: Icons.more_horiz_rounded,
+                                size: 40,
+                                onTap: _showRoomMenu,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Grade de cadeiras (3 colunas).
+                  Expanded(
+                    child: GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
+                      itemCount: seatCount,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 0.82,
+                      ),
+                      itemBuilder: (context, index) {
+                        final seat = (room != null && index < room.seats.length)
+                            ? room.seats[index]
+                            : null;
+                        final isMe = seat?.userId != null && seat!.userId == me?.id;
+                        return _SeatTile(
+                          index: index,
+                          seat: seat,
+                          isMe: isMe,
+                          micOn: _micOn,
+                          onTap: () {
+                            final taken = seat?.userId != null && seat!.userId!.isNotEmpty;
+                            if (taken) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isMe ? 'Seu lugar na sala' : (seat.userName ?? 'Usuário'),
+                                  ),
+                                ),
+                              );
+                            } else if (seat?.isLocked ?? false) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Cadeira bloqueada')),
+                              );
+                            } else {
+                              _takeSeat(index);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  if (_showChat && _messages.isNotEmpty)
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 104),
+                      width: double.infinity,
+                      margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0x99000000),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _messages
+                            .skip(_messages.length > 4 ? _messages.length - 4 : 0)
+                            .map(
+                              (m) => Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: '${m.sender}: ',
+                                      style: const TextStyle(
+                                        color: _neonA,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    TextSpan(text: m.text),
+                                  ],
+                                ),
+                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  // Barra inferior flutuante com blur.
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0x1FFFFFFF),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: const Color(0x2EFFFFFF)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _chatController,
+                                  onSubmitted: (_) => _sendMessage(),
+                                  textInputAction: TextInputAction.send,
+                                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                                  decoration: InputDecoration(
+                                    hintText: 'Say hi to everyone...',
+                                    hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    suffixIcon: IconButton(
+                                      onPressed: _sendMessage,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                      icon: const Icon(Icons.send_rounded, color: _neonA, size: 20),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              _CircleAction(
+                                icon: _micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
+                                size: 44,
+                                fill: _micOn ? const Color(0xFF1FD6A0) : const Color(0x33FFFFFF),
+                                iconColor: _micOn ? const Color(0xFF07201A) : Colors.white,
+                                onTap: () => setState(() => _micOn = !_micOn),
+                              ),
+                              const SizedBox(width: 8),
+                              _CircleAction(
+                                icon: Icons.call_end_rounded,
+                                size: 44,
+                                fill: const Color(0xFFE53935),
+                                onTap: _leaveRoom,
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: _openGifts,
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [_neonA, _neonB],
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(color: Color(0x9900F2FE), blurRadius: 16, spreadRadius: 1),
+                                      BoxShadow(color: Color(0x776807BA), blurRadius: 22, spreadRadius: 2),
+                                    ],
+                                  ),
+                                  child: const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 24),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Botão do foguete: acima da barra, canto inferior direito.
+            Positioned(
+              right: 18,
+              bottom: bottomInset + 96,
+              child: GestureDetector(
+                onTap: () => _launchRocket(me?.name ?? '', me?.photoUrl),
+                child: Container(
+                  width: 54,
+                  height: 54,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFFFE7A1), Color(0xFFFF8A3D)],
+                    ),
+                    boxShadow: [
+                      BoxShadow(color: Color(0x88FFB300), blurRadius: 16, spreadRadius: 1),
+                    ],
+                  ),
+                  child: const Icon(Icons.rocket_launch_rounded, color: Color(0xFF111225), size: 28),
+                ),
+              ),
+            ),
+            if (_entryAsset != null)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    color: const Color(0x99050713),
+                    alignment: Alignment.center,
+                    child: TweenAnimationBuilder<double>(
+                      key: ValueKey(_entryAsset),
+                      tween: Tween<double>(begin: 0.6, end: 1.0),
+                      duration: const Duration(milliseconds: 450),
+                      curve: Curves.easeOutBack,
+                      builder: (context, scale, child) => Opacity(
+                        opacity: scale.clamp(0.0, 1.0),
+                        child: Transform.scale(scale: scale, child: child),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(28),
+                              border: Border.all(color: _neonA, width: 2),
+                              boxShadow: const [
+                                BoxShadow(color: Color(0x8800F2FE), blurRadius: 30, spreadRadius: 2),
                               ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(26),
+                              child: Image.asset(
+                                _entryAsset!,
+                                width: 240,
+                                height: 240,
+                                fit: BoxFit.cover,
+                                cacheWidth: 600,
+                                errorBuilder: (context, error, stack) => const SizedBox(
+                                  width: 240,
+                                  height: 240,
+                                  child: Icon(Icons.workspace_premium_rounded, color: _neonA, size: 110),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            '$_entryName entrou na sala',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
                             ),
                           ),
                         ],
@@ -326,272 +649,22 @@ class _RoomScreenState extends State<RoomScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),                // Camada 2: grade 3x3 dos lugares/avatares.
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: GridView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: 9,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 0.78,
-                      ),
-                      itemBuilder: (context, index) {
-                        final occupied = index == 0;
-                        return GestureDetector(
-                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(occupied ? 'Seu lugar na sala' : 'Lugar ${index + 1} selecionado')),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xA6101728),
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: occupied ? const Color(0xFFFFD76A) : const Color(0x6688DCE8),
-                                width: occupied ? 1.8 : 1,
-                              ),
-                              boxShadow: const [
-                                BoxShadow(color: Color(0x3300D9F5), blurRadius: 12, spreadRadius: 1),
-                              ],
-                            ),
-                            padding: const EdgeInsets.fromLTRB(5, 8, 5, 6),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _SeatAvatar(occupied: occupied),
-                                const SizedBox(height: 7),
-                                Text(
-                                  occupied ? 'Você' : 'Lugar ${index + 1}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
-                                ),
-                                const SizedBox(height: 5),
-                                Icon(
-                                  occupied && _micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
-                                  size: 15,
-                                  color: occupied && _micOn ? const Color(0xFF78F0C4) : Colors.white54,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                if (_showChat)
-                  Container(
-                    constraints: const BoxConstraints(maxHeight: 100),
-                    margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-                    padding: const EdgeInsets.all(9),
-                    decoration: BoxDecoration(color: const Color(0xCC08101F), borderRadius: BorderRadius.circular(12)),
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: _messages
-                          .skip(_messages.length > 4 ? _messages.length - 4 : 0)
-                          .map(
-                            (m) => Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '${m.sender}: ',
-                                    style: const TextStyle(color: Color(0xFFFFD76A), fontWeight: FontWeight.w800),
-                                  ),
-                                  TextSpan(text: m.text),
-                                ],
-                              ),
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                // Camada 4: barra inferior de chat, microfone e presente.
-                Container(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                  decoration: const BoxDecoration(
-                    color: Color(0xE9080D1A),
-                    border: Border(top: BorderSide(color: Color(0x55A5EAF2))),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _showChat = !_showChat),
-                          child: Container(
-                            height: 44,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(color: const Color(0xFF1A2437), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0x668CE9F4))),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.chat_bubble_outline, color: Color(0xFF8CE9F4), size: 19),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _chatController,
-                                    onSubmitted: (_) => _sendMessage(),
-                                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                                    decoration: const InputDecoration(hintText: 'Diga algo...', hintStyle: TextStyle(color: Colors.white54, fontSize: 12), border: InputBorder.none, isDense: true),
-                                  ),
-                                ),
-                                IconButton(onPressed: _sendMessage, icon: const Icon(Icons.send_rounded, color: Color(0xFFFFD76A), size: 18), padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 28, minHeight: 30)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _RoundButton(
-                        icon: _micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
-                        active: _micOn,
-                        onTap: () => setState(() => _micOn = !_micOn),
-                      ),
-                      const SizedBox(width: 8),
-                      _RoundButton(
-                        icon: Icons.card_giftcard_rounded,
-                        active: true,
-                        onTap: _openGifts,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Botão flutuante do foguete (Flutter puro).
-          Positioned(
-            right: 16,
-            bottom: MediaQuery.of(context).padding.bottom + 86,
-            child: GestureDetector(
-              onTap: () => setState(() => _showRocket = true),
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFFFE7A1), Color(0xFFFFB300)],
-                  ),
-                  boxShadow: [
-                    BoxShadow(color: Color(0x88FFB300), blurRadius: 16, spreadRadius: 1),
-                    BoxShadow(color: Color(0x5531D7FF), blurRadius: 24, spreadRadius: 2),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(5),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/rockets/lv1.png',
-                      fit: BoxFit.cover,
-                      cacheWidth: 160,
-                      errorBuilder: (context, error, stack) => const Icon(
-                        Icons.rocket_launch_rounded,
-                        color: Color(0xFF101629),
-                        size: 28,
-                      ),
-                    ),
-                  ),
-                ),
               ),
-            ),
-          ),
-          if (_entryAsset != null)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  color: const Color(0x99050713),
-                  alignment: Alignment.center,
-                  child: TweenAnimationBuilder<double>(
-                    key: ValueKey(_entryAsset),
-                    tween: Tween<double>(begin: 0.6, end: 1.0),
-                    duration: const Duration(milliseconds: 450),
-                    curve: Curves.easeOutBack,
-                    builder: (context, scale, child) => Opacity(
-                      opacity: scale.clamp(0.0, 1.0),
-                      child: Transform.scale(scale: scale, child: child),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(color: const Color(0xFFFFD76A), width: 2),
-                            boxShadow: const [BoxShadow(color: Color(0x88FFB300), blurRadius: 30, spreadRadius: 2)],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(26),
-                            child: Image.asset(
-                              _entryAsset!,
-                              width: 240,
-                              height: 240,
-                              fit: BoxFit.cover,
-                              cacheWidth: 600,
-                              errorBuilder: (context, error, stack) => const SizedBox(
-                                width: 240,
-                                height: 240,
-                                child: Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD76A), size: 110),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          '$_entryName entrou na sala',
-                          style: const TextStyle(
-                            color: Color(0xFFFFE7A1),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                            shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+            if (_showRocket)
+              RocketLaunchOverlay(
+                key: ValueKey(_rocketSeq),
+                level: 1,
+                senderName: _rocketSender,
+                avatarUrl: _rocketAvatar,
+                onFinished: () {
+                  if (mounted) setState(() => _showRocket = false);
+                },
               ),
-            ),
-          if (_showRocket)
-            RocketLaunchOverlay(
-              level: 1,
-              onFinished: () {
-                if (mounted) setState(() => _showRocket = false);
-              },
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
-}
-
-class _RoundButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool active;
-
-  const _RoundButton({required this.icon, required this.onTap, this.active = false});
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: active ? const Color(0xFFFFD76A) : const Color(0xB8172236),
-    shape: const CircleBorder(),
-    child: InkWell(
-      customBorder: const CircleBorder(),
-      onTap: onTap,
-      child: SizedBox(
-        width: 42,
-        height: 42,
-        child: Icon(icon, color: active ? const Color(0xFF101629) : Colors.white, size: 21),
-      ),
-    ),
-  );
 }
 
 class _ChatLine {
@@ -600,51 +673,114 @@ class _ChatLine {
   const _ChatLine(this.sender, this.text);
 }
 
-/// Avatar da cadeira: a imagem da moldura é o fundo do círculo e o
-/// ícone/foto do usuário fica por cima, menor, para não ser coberto.
-class _SeatAvatar extends StatelessWidget {
-  final bool occupied;
-  const _SeatAvatar({required this.occupied});
+class _CircleAction extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final double size;
+  final Color fill;
+  final Color iconColor;
+
+  const _CircleAction({
+    required this.icon,
+    required this.onTap,
+    this.size = 42,
+    this.fill = const Color(0x33FFFFFF),
+    this.iconColor = Colors.white,
+  });
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: fill,
+    shape: const CircleBorder(),
+    child: InkWell(
+      customBorder: const CircleBorder(),
+      onTap: onTap,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Icon(icon, color: iconColor, size: size * 0.5),
+      ),
+    ),
+  );
+}
+
+class _SeatTile extends StatelessWidget {
+  final int index;
+  final SeatModel? seat;
+  final bool isMe;
+  final bool micOn;
+  final VoidCallback onTap;
+
+  const _SeatTile({
+    required this.index,
+    required this.seat,
+    required this.isMe,
+    required this.micOn,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final frame = occupied
-        ? 'assets/images/frames/host1.png'
-        : 'assets/images/frames/oficial1.png';
-    final glow = occupied ? const Color(0xFFFFB300) : const Color(0xFF7B5CFF);
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: glow.withValues(alpha: 0.45), blurRadius: 12, spreadRadius: 1)],
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          ClipOval(
-            child: Image.asset(
-              frame,
-              width: 64,
-              height: 64,
-              fit: BoxFit.cover,
-              cacheWidth: 192,
-              errorBuilder: (context, error, stack) => Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: SweepGradient(colors: [glow, const Color(0xFFFFE7A1), glow]),
-                ),
-              ),
-            ),
+    final s = seat;
+    final taken = s != null && s.userId != null && s.userId!.isNotEmpty;
+    if (!taken) {
+      final locked = s?.isLocked ?? false;
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0x0DFFFFFF),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _seatBorder, width: 1.4),
           ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                locked ? Icons.lock_outline_rounded : Icons.add_rounded,
+                color: _seatIcon,
+                size: 32,
+              ),
+              const SizedBox(height: 4),
+              Text('${index + 1}', style: const TextStyle(color: _seatIcon, fontSize: 11)),
+            ],
+          ),
+        ),
+      );
+    }
+    final muted = isMe ? !micOn : s.isMuted;
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
           Container(
-            padding: const EdgeInsets.all(2),
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white24),
-            child: const CircleAvatar(
-              radius: 19,
-              backgroundColor: Color(0xFF1B2140),
-              child: Icon(Icons.person_rounded, color: Colors.white70, size: 22),
+            width: 68,
+            height: 68,
+            padding: const EdgeInsets.all(3),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [_neonA, _neonB],
+              ),
+              boxShadow: [BoxShadow(color: Color(0x6600F2FE), blurRadius: 14, spreadRadius: 1)],
             ),
+            child: SenderAvatar(url: s.photoUrl, name: s.userName ?? ''),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            isMe ? 'Você' : (s.userName ?? 'Usuário'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Icon(
+            muted ? Icons.mic_off_rounded : Icons.mic_rounded,
+            size: 15,
+            color: muted ? Colors.white54 : const Color(0xFF78F0C4),
           ),
         ],
       ),

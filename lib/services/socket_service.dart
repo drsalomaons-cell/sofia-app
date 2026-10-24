@@ -86,12 +86,14 @@ class SocketService extends ChangeNotifier {
   }
 
   void onGift(void Function(Map<String, dynamic>) handler) {
+    _socket?.off('room:gift');
     _socket?.on('room:gift', (data) {
       if (data is Map) handler(Map<String, dynamic>.from(data));
     });
   }
 
   void onRoomState(void Function(Map<String, dynamic>) handler) {
+    _socket?.off('room:state');
     _socket?.on('room:state', (data) {
       if (data is Map) handler(Map<String, dynamic>.from(data));
     });
@@ -110,6 +112,7 @@ class SocketService extends ChangeNotifier {
   }
 
   void onUserJoined(void Function(Map<String, dynamic>) handler) {
+    _socket?.off('room:user_joined');
     _socket?.on('room:user_joined', (data) {
       if (data is Map) handler(Map<String, dynamic>.from(data));
     });
