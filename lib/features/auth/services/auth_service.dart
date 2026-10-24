@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sofia/models/user_model.dart';
 import 'package:sofia/services/api_client.dart';
@@ -130,8 +131,134 @@ class AuthService {
     await Future.delayed(const Duration(seconds: 1));
   }
 
+  /// Atualiza o perfil completo no servidor e no cache local.
   Future<UserModel?> updateProfile(UserModel user) async {
+    try {
+      final res = await ApiClient.put('/api/users/profile', {
+        'userId': user.id,
+        'name': user.name,
+        'bio': user.bio,
+        'gender': user.gender,
+        'age': user.age,
+        'interestedIn': user.interestedIn,
+        'coverUrl': user.coverUrl,
+        'photoUrl': user.photoUrl,
+        'frameId': user.effectiveFrameId,
+      });
+      if (res != null && res['user'] != null) {
+        final serverUser = UserModel.fromJson(
+          Map<String, dynamic>.from(res['user'] as Map),
+        );
+        await _saveSession(serverUser);
+        return serverUser;
+      }
+    } catch (_) {}
     await _saveSession(user);
     return user;
+  }
+
+  /// Envia foto de perfil ao backend e salva permanentemente.
+  Future<UserModel?> uploadAvatar(UserModel currentUser, File file) async {
+    final bytes = await file.readAsBytes();
+    final ext = file.path.split('.').last.toLowerCase();
+    final mime = (ext == 'png') ? 'image/png' : (ext == 'webp' ? 'image/webp' : 'image/jpeg');
+    final dataUri = 'data:$mime;base64,${base64Encode(bytes)}';
+
+    final res = await ApiClient.post('/api/users/avatar', {
+      'userId': currentUser.id,
+      'image': dataUri,
+    });
+
+    if (res != null && res['user'] != null) {
+      final updated = UserModel.fromJson(Map<String, dynamic>.from(res['user'] as Map));
+      await _saveSession(updated);
+      return updated;
+    } else if (res != null && res['photoUrl'] != null) {
+      final updated = currentUser.copyWith(photoUrl: res['photoUrl'].toString());
+      await _saveSession(updated);
+      return updated;
+    }
+    return currentUser;
+  }
+
+  /// Envia foto de capa ao backend e salva permanentemente.
+  Future<UserModel?> uploadCover(UserModel currentUser, File file) async {
+    final bytes = await file.readAsBytes();
+    final ext = file.path.split('.').last.toLowerCase();
+    final mime = (ext == 'png') ? 'image/png' : (ext == 'webp' ? 'image/webp' : 'image/jpeg');
+    final dataUri = 'data:$mime;base64,${base64Encode(bytes)}';
+
+    final res = await ApiClient.post('/api/users/cover', {
+      'userId': currentUser.id,
+      'image': dataUri,
+    });
+
+    if (res != null && res['user'] != null) {
+      final updated = UserModel.fromJson(Map<String, dynamic>.from(res['user'] as Map));
+      await _saveSession(updated);
+      return updated;
+    } else if (res != null && res['coverUrl'] != null) {
+      final updated = currentUser.copyWith(coverUrl: res['coverUrl'].toString());
+      await _saveSession(updated);
+      return updated;
+    }
+    return currentUser;
+  }
+
+  /// Equipa uma nova moldura no servidor.
+  Future<UserModel?> equipFrame(UserModel currentUser, String frameId) async {
+    final res = await ApiClient.put('/api/users/frame', {
+      'userId': currentUser.id,
+      'frameId': frameId,
+    });
+
+    if (res != null && res['user'] != null) {
+      final updated = UserModel.fromJson(Map<String, dynamic>.from(res['user'] as Map));
+      await _saveSession(updated);
+      return updated;
+    } else {
+      final updated = currentUser.copyWith(frameId: frameId, frame: frameId);
+      await _saveSession(updated);
+      return updated;
+    }
+  }
+
+  /// Envia uma imagem para a galeria do usuário como URL persistente.
+  Future<UserModel?> uploadGalleryPhoto(UserModel currentUser, File file) async {
+    final bytes = await file.readAsBytes();
+    final ext = file.path.split('.').last.toLowerCase();
+    final mime = (ext == 'png') ? 'image/png' : (ext == 'webp' ? 'image/webp' : 'image/jpeg');
+    final dataUri = 'data:$mime;base64,${base64Encode(bytes)}';
+
+    final res = await ApiClient.post('/api/users/gallery-upload', {
+      'userId': currentUser.id,
+      'image': dataUri,
+    });
+
+    if (res != null && res['gallery'] is List) {
+      final newGallery = (res['gallery'] as List).map((e) => e.toString()).toList();
+      final updated = currentUser.copyWith(gallery: newGallery);
+      await _saveSession(updated);
+      return updated;
+    } else if (res != null && res['url'] != null) {
+      final newGallery = [...currentUser.gallery, res['url'].toString()];
+      final updated = currentUser.copyWith(gallery: newGallery);
+      await _saveSession(updated);
+      return updated;
+    }
+    return currentUser;
+  }
+
+  /// Remove uma foto da galeria.
+  Future<UserModel?> removeGalleryPhoto(UserModel currentUser, String photoUrl) async {
+    final updatedList = currentUser.gallery.where((url) => url != photoUrl).toList();
+    await ApiClient.put('/api/users/gallery', {
+      'userId': currentUser.id,
+      'gallery': updatedList,
+    });
+
+    final updated = currentUser.copyWith(gallery: updatedList);
+    await _saveSession(updated);
+    return updated;
   }
 }

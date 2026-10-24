@@ -1,4 +1,5 @@
-﻿import 'package:flutter/foundation.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:sofia/models/user_model.dart';
 import 'package:sofia/features/auth/services/auth_service.dart';
 
@@ -38,11 +39,10 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       
       if (_user != null) {
-        // Salvar usuÃ¡rio no armazenamento local
         notifyListeners();
         return true;
       } else {
-        _errorMessage = 'E-mail ou senha invÃ¡lidos';
+        _errorMessage = 'E-mail ou senha inválidos';
         notifyListeners();
         return false;
       }
@@ -120,6 +120,96 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Faz upload da foto de perfil ao backend e atualiza o estado imediatamente.
+  Future<bool> uploadAvatar(File imageFile) async {
+    if (_user == null) return false;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _user = await _authService.uploadAvatar(_user!, imageFile);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Falha ao salvar foto de perfil: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Faz upload da foto de capa ao backend e atualiza o estado imediatamente.
+  Future<bool> uploadCover(File imageFile) async {
+    if (_user == null) return false;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _user = await _authService.uploadCover(_user!, imageFile);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Falha ao salvar capa: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Equipa uma nova moldura no servidor e atualiza o estado.
+  Future<bool> equipFrame(String frameId) async {
+    if (_user == null) return false;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _user = await _authService.equipFrame(_user!, frameId);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Falha ao equipar moldura: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Adiciona uma foto à galeria salvando como URL no backend.
+  Future<bool> uploadGalleryPhoto(File imageFile) async {
+    if (_user == null) return false;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _user = await _authService.uploadGalleryPhoto(_user!, imageFile);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Falha ao adicionar à galeria: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Remove uma foto da galeria no backend.
+  Future<bool> removeGalleryPhoto(String photoUrl) async {
+    if (_user == null) return false;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _user = await _authService.removeGalleryPhoto(_user!, photoUrl);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = 'Falha ao remover foto: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();
@@ -137,4 +227,3 @@ class AuthProvider extends ChangeNotifier {
     return _user?.region;
   }
 }
-

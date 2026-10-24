@@ -84,6 +84,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
   saldo_moedas INTEGER NOT NULL DEFAULT 0 CHECK (saldo_moedas >= 0),
   bio TEXT,
   url_imagem_perfil TEXT,
+  cover_url TEXT,
+  frame_id TEXT,
   status TEXT NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo', 'banido'))
 );
 

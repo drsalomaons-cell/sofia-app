@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 const store = require('../data/store');
 const { hashPassword } = require('../auth/password');
@@ -84,7 +86,198 @@ function mountApiRoutes(app, io) {
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
     res.json({ user: store.publicAppUser(user) });
   });
-  // ── User profile gallery (self only; max 5 images, 2 MiB each) ──
+
+  // ── Armazenamento de uploads de mídia (Avatares, Capas, Galeria) ──
+  const uploadsDir = path.join(__dirname, '..', 'storage', 'uploads');
+  const avatarsDir = path.join(uploadsDir, 'avatars');
+  const coversDir = path.join(uploadsDir, 'covers');
+  const galleryDir = path.join(uploadsDir, 'gallery');
+
+  [uploadsDir, avatarsDir, coversDir, galleryDir].forEach((dir) => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  });
+
+  function saveUploadedBase64(dataUriOrBase64, targetDir, prefix) {
+    let mime = 'image/jpeg';
+    let base64Data = dataUriOrBase64;
+    if (typeof dataUriOrBase64 === 'string' && dataUriOrBase64.startsWith('data:')) {
+      const commaIdx = dataUriOrBase64.indexOf(',');
+      if (commaIdx >= 0) {
+        const header = dataUriOrBase64.substring(0, commaIdx);
+        base64Data = dataUriOrBase64.substring(commaIdx + 1);
+        if (header.includes('png')) mime = 'image/png';
+        else if (header.includes('webp')) mime = 'image/webp';
+      }
+    }
+    const ext = mime.includes('png') ? 'png' : (mime.includes('webp') ? 'webp' : 'jpg');
+    const filename = `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
+    const filePath = path.join(targetDir, filename);
+    const buffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(filePath, buffer);
+    return filename;
+  }
+
+  // POST /api/users/avatar
+  app.post('/api/users/avatar', requireAuth, requireSelf('userId'), (req, res) => {
+    const { userId, image } = req.body || {};
+    if (!image || typeof image !== 'string') {
+      return res.status(400).json({ error: 'Imagem base64 obrigatoria' });
+    }
+    const users = store.getUsers();
+    const idx = users.findIndex((u) => String(u.id) === String(userId));
+    if (idx < 0) return res.status(404).json({ error: 'Usuario nao encontrado' });
+
+    try {
+      const filename = saveUploadedBase64(image, avatarsDir, `avatar_${userId}`);
+      const photoUrl = `/storage/uploads/avatars/${filename}`;
+      users[idx] = { ...users[idx], photoUrl };
+      store.saveUsers(users);
+
+      // Atualiza avatares nas salas ativas
+      const rooms = store.getRooms();
+      let roomChanged = false;
+      rooms.forEach((r) => {
+        if (Array.isArray(r.seats)) {
+          r.seats.forEach((s) => {
+            if (s && String(s.userId) === String(userId)) {
+              s.photoUrl = photoUrl;
+              roomChanged = true;
+            }
+          });
+        }
+      });
+      if (roomChanged) store.saveRooms(rooms);
+
+      return res.json({ success: true, photoUrl, user: store.publicAppUser(users[idx]) });
+    } catch (e) {
+      return res.status(500).json({ error: `Erro ao salvar foto: ${e.message}` });
+    }
+  });
+
+  // POST /api/users/cover
+  app.post('/api/users/cover', requireAuth, requireSelf('userId'), (req, res) => {
+    const { userId, image } = req.body || {};
+    if (!image || typeof image !== 'string') {
+      return res.status(400).json({ error: 'Imagem base64 obrigatoria' });
+    }
+    const users = store.getUsers();
+    const idx = users.findIndex((u) => String(u.id) === String(userId));
+    if (idx < 0) return res.status(404).json({ error: 'Usuario nao encontrado' });
+
+    try {
+      const filename = saveUploadedBase64(image, coversDir, `cover_${userId}`);
+      const coverUrl = `/storage/uploads/covers/${filename}`;
+      users[idx] = { ...users[idx], coverUrl, cover_url: coverUrl };
+      store.saveUsers(users);
+      return res.json({ success: true, coverUrl, user: store.publicAppUser(users[idx]) });
+    } catch (e) {
+      return res.status(500).json({ error: `Erro ao salvar capa: ${e.message}` });
+    }
+  });
+
+  // POST /api/users/gallery-upload
+  app.post('/api/users/gallery-upload', requireAuth, requireSelf('userId'), (req, res) => {
+    const { userId, image } = req.body || {};
+    if (!image || typeof image !== 'string') {
+      return res.status(400).json({ error: 'Imagem base64 obrigatoria' });
+    }
+    const users = store.getUsers();
+    const idx = users.findIndex((u) => String(u.id) === String(userId));
+    if (idx < 0) return res.status(404).json({ error: 'Usuario nao encontrado' });
+
+    const currentGallery = Array.isArray(users[idx].gallery) ? users[idx].gallery : [];
+    if (currentGallery.length >= 5) {
+      return res.status(400).json({ error: 'Galeria ja possui 5 fotos (limite maximo)' });
+    }
+
+    try {
+      const filename = saveUploadedBase64(image, galleryDir, `gallery_${userId}`);
+      const photoUrl = `/storage/uploads/gallery/${filename}`;
+      const updatedGallery = [...currentGallery, photoUrl];
+      users[idx] = { ...users[idx], gallery: updatedGallery };
+      store.saveUsers(users);
+      return res.json({ success: true, url: photoUrl, gallery: updatedGallery });
+    } catch (e) {
+      return res.status(500).json({ error: `Erro ao adicionar foto: ${e.message}` });
+    }
+  });
+
+  // PUT /api/users/frame
+  app.put('/api/users/frame', requireAuth, requireSelf('userId'), (req, res) => {
+    const { userId, frameId, frame } = req.body || {};
+    const selectedFrame = frameId || frame;
+    if (!selectedFrame || typeof selectedFrame !== 'string') {
+      return res.status(400).json({ error: 'frameId obrigatorio' });
+    }
+    const users = store.getUsers();
+    const idx = users.findIndex((u) => String(u.id) === String(userId));
+    if (idx < 0) return res.status(404).json({ error: 'Usuario nao encontrado' });
+
+    users[idx] = {
+      ...users[idx],
+      frame: selectedFrame,
+      frameId: selectedFrame,
+      frame_id: selectedFrame,
+    };
+    store.saveUsers(users);
+
+    // Reflete a nova moldura nas cadeiras das salas ativas
+    const rooms = store.getRooms();
+    let roomChanged = false;
+    rooms.forEach((r) => {
+      if (Array.isArray(r.seats)) {
+        r.seats.forEach((s) => {
+          if (s && String(s.userId) === String(userId)) {
+            s.frame = selectedFrame;
+            roomChanged = true;
+          }
+        });
+      }
+    });
+    if (roomChanged) store.saveRooms(rooms);
+
+    return res.json({
+      success: true,
+      frame: selectedFrame,
+      frameId: selectedFrame,
+      user: store.publicAppUser(users[idx]),
+    });
+  });
+
+  // PUT /api/users/profile
+  app.put('/api/users/profile', requireAuth, requireSelf('userId'), (req, res) => {
+    const { userId, name, bio, gender, age, interestedIn, coverUrl, photoUrl, frameId, frame } = req.body || {};
+    const users = store.getUsers();
+    const idx = users.findIndex((u) => String(u.id) === String(userId));
+    if (idx < 0) return res.status(404).json({ error: 'Usuario nao encontrado' });
+
+    const current = users[idx];
+    users[idx] = {
+      ...current,
+      name: (typeof name === 'string' && name.trim()) ? name.trim() : current.name,
+      bio: typeof bio === 'string' ? bio : (current.bio || ''),
+      gender: (typeof gender === 'string' && gender.trim()) ? gender.trim() : current.gender,
+      age: typeof age === 'number' ? age : (parseInt(age, 10) || current.age),
+      interestedIn: typeof interestedIn === 'string' ? interestedIn : current.interestedIn,
+      coverUrl: typeof coverUrl === 'string' ? coverUrl : (current.coverUrl || current.cover_url || ''),
+      cover_url: typeof coverUrl === 'string' ? coverUrl : (current.cover_url || current.coverUrl || ''),
+      photoUrl: typeof photoUrl === 'string' ? photoUrl : current.photoUrl,
+      frame: (frameId || frame) ? (frameId || frame) : current.frame,
+      frameId: (frameId || frame) ? (frameId || frame) : (current.frameId || current.frame),
+      frame_id: (frameId || frame) ? (frameId || frame) : (current.frame_id || current.frame),
+    };
+    store.saveUsers(users);
+    return res.json({ success: true, user: store.publicAppUser(users[idx]) });
+  });
+
+  // GET /api/users/:userId/profile
+  app.get('/api/users/:userId/profile', (req, res) => {
+    const user = store.findUser(req.params.userId);
+    if (!user) return res.status(404).json({ error: 'Usuario nao encontrado' });
+    return res.json({ success: true, user: store.publicAppUser(user) });
+  });
+
+    // ── User profile gallery (self only; max 5 images, 2 MiB each) ──
   app.put('/api/users/gallery', requireAuth, requireSelf('userId'), (req, res) => {
     const { userId, gallery } = req.body || {};
     if (!Array.isArray(gallery) || gallery.length > 5) {

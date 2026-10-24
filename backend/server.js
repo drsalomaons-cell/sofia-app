@@ -2,6 +2,7 @@
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -20,6 +21,12 @@ const { mountApiRoutes } = require('./routes/api');
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../admin_panel/public')));
+
+const storageDir = path.join(__dirname, 'storage');
+if (!fs.existsSync(storageDir)) {
+  fs.mkdirSync(storageDir, { recursive: true });
+}
+app.use('/storage', express.static(storageDir));
 
 let users = [
   {
