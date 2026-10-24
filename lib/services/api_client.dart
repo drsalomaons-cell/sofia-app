@@ -20,6 +20,22 @@ class ApiClient {
     return 'https://sofia-app-yhzb.onrender.com';
   }
 
+  /// Resolve caminhos relativos de mídia para URLs completas do servidor.
+  static String? resolveUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return null;
+    final trimmed = url.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('data:')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/')) {
+      return '$baseUrl$trimmed';
+    }
+    return '$baseUrl/$trimmed';
+  }
+
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   static String get clientToken =>

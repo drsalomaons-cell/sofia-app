@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sofia/features/sunlight/theme/sunlight_room_layout.dart';
+import 'package:sofia/widgets/frame_avatar.dart';
 
 /// Atalho fixo do foguete de sala: abre o ranking/participantes, não envia presente.
 class SofiaPremiumVipGiftButton extends StatelessWidget {
@@ -63,25 +64,13 @@ class SofiaPremiumVipGiftButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (topContributorName != null)
-                      CircleAvatar(
-                        radius: 13 * scale,
-                        backgroundImage:
-                            topContributorPhotoUrl != null &&
-                                topContributorPhotoUrl!.isNotEmpty
-                            ? NetworkImage(topContributorPhotoUrl!)
-                            : null,
-                        child:
-                            topContributorPhotoUrl == null ||
-                                topContributorPhotoUrl!.isEmpty
-                            ? Text(
-                                topContributorName!.isEmpty
-                                    ? '?'
-                                    : topContributorName!
-                                          .substring(0, 1)
-                                          .toUpperCase(),
-                                style: TextStyle(fontSize: 11 * scale),
-                              )
-                            : null,
+                      FrameAvatar(
+                        frameId: 'vip_a',
+                        photoUrl: topContributorPhotoUrl,
+                        name: topContributorName,
+                        customDiameter: 26 * scale,
+                        size: FrameAvatarSize.small,
+                        showPlaque: false,
                       )
                     else
                       Text('🚀', style: TextStyle(fontSize: 20 * scale)),

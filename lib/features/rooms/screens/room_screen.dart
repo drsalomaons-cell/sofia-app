@@ -8,6 +8,7 @@ import 'package:sofia/features/sunlight/widgets/rocket_launch_overlay.dart';
 import 'package:sofia/features/sunlight/widgets/sofia_premium_gift_panel.dart';
 import 'package:sofia/models/room_model.dart';
 import 'package:sofia/models/seat_model.dart';
+import 'package:sofia/widgets/frame_avatar.dart';
 import 'package:sofia/services/room_service.dart';
 import 'package:sofia/services/socket_service.dart';
 
@@ -754,20 +755,14 @@ class _SeatTile extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 68,
-            height: 68,
-            padding: const EdgeInsets.all(3),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [_neonA, _neonB],
-              ),
-              boxShadow: [BoxShadow(color: Color(0x6600F2FE), blurRadius: 14, spreadRadius: 1)],
-            ),
-            child: SenderAvatar(url: s.photoUrl, name: s.userName ?? ''),
+          FrameAvatar(
+            frameId: s.frame ?? (isMe ? 'official_admin_a' : 'host_a'),
+            gender: s.gender,
+            photoUrl: s.photoUrl,
+            name: s.userName ?? '',
+            customDiameter: 48,
+            size: FrameAvatarSize.small,
+            showPlaque: false,
           ),
           const SizedBox(height: 7),
           Text(

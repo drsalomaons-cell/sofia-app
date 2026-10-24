@@ -3,6 +3,7 @@ import 'package:sofia/core/themes/app_theme.dart';
 import 'package:sofia/features/sunlight/theme/sunlight_room_layout.dart';
 import 'package:sofia/features/sunlight/widgets/sunlight_neon_glow.dart';
 import 'package:sofia/models/seat_model.dart';
+import 'package:sofia/widgets/frame_avatar.dart';
 
 /// Layout de cadeiras Sunlight Live — trono + fileiras responsivas.
 /// Suporta: 4, 6, 8, 10, 12, 15, 20
@@ -189,46 +190,28 @@ class _SeatBubble extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                width: size * 0.64,
-                height: size * 0.64,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ClipOval(
-                      child:
-                          occupied &&
-                              photoUrl != null &&
-                              (photoUrl!.startsWith('https://') ||
-                                  photoUrl!.startsWith('http://'))
-                          ? Image.network(
-                              photoUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _seatFallbackIcon(
-                                occupied: occupied,
-                                isThrone: isThrone,
-                              ),
-                            )
-                          : _seatFallbackIcon(
-                              occupied: occupied,
-                              isThrone: isThrone,
-                            ),
+              if (occupied)
+                FrameAvatar(
+                  frameId: seat.frame ?? (isThrone ? 'official_admin_a' : 'host_a'),
+                  gender: seat.gender,
+                  photoUrl: photoUrl,
+                  name: seat.userName ?? 'Lv$level',
+                  customDiameter: size * 0.52,
+                  size: FrameAvatarSize.small,
+                  showPlaque: false,
+                )
+              else
+                SizedBox(
+                  width: size * 0.64,
+                  height: size * 0.64,
+                  child: ClipOval(
+                    child: _seatFallbackIcon(
+                      occupied: false,
+                      isThrone: isThrone,
                     ),
-                    if (isThrone || (occupied && level > 1))
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Icon(
-                          isThrone
-                              ? Icons.workspace_premium_rounded
-                              : Icons.military_tech_rounded,
-                          color: AppTheme.dourado,
-                          size: 13,
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
-              ),
+
               if (occupied)
                 Text(
                   'Lv $level',

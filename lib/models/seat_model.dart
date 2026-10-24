@@ -8,6 +8,8 @@ class SeatModel {
   final bool isMuted;
   final bool isLocked;
   final int giftCount;
+  final String? frame;
+  final String? gender;
 
   const SeatModel({
     required this.index,
@@ -19,6 +21,8 @@ class SeatModel {
     this.isMuted = false,
     this.isLocked = false,
     this.giftCount = 0,
+    this.frame,
+    this.gender,
   });
 
   bool get isOccupied => userId != null;
@@ -33,6 +37,8 @@ class SeatModel {
     bool? isMuted,
     bool? isLocked,
     int? giftCount,
+    String? frame,
+    String? gender,
     bool clearUser = false,
   }) {
     return SeatModel(
@@ -45,6 +51,8 @@ class SeatModel {
       isMuted: clearUser ? false : (isMuted ?? this.isMuted),
       isLocked: isLocked ?? this.isLocked,
       giftCount: clearUser ? 0 : (giftCount ?? this.giftCount),
+      frame: clearUser ? null : (frame ?? this.frame),
+      gender: clearUser ? null : (gender ?? this.gender),
     );
   }
 
@@ -59,6 +67,8 @@ class SeatModel {
       isMuted: json['isMuted'] as bool? ?? false,
       isLocked: json['isLocked'] as bool? ?? false,
       giftCount: (json['giftCount'] as num?)?.toInt() ?? 0,
+      frame: (json['frame'] ?? json['frameId'] ?? json['frame_id'])?.toString(),
+      gender: json['gender']?.toString(),
     );
   }
 }
