@@ -15,7 +15,7 @@ extension FrameAvatarSizeExtension on FrameAvatarSize {
   double get avatarDiameter {
     switch (this) {
       case FrameAvatarSize.small:
-        return 44.0;
+        return 48.0;
       case FrameAvatarSize.medium:
         return 62.0;
       case FrameAvatarSize.large:
@@ -37,11 +37,11 @@ extension FrameAvatarSizeExtension on FrameAvatarSize {
   double get plaqueFontSize {
     switch (this) {
       case FrameAvatarSize.small:
-        return 8.0;
+        return 11.0;
       case FrameAvatarSize.medium:
-        return 9.5;
+        return 12.0;
       case FrameAvatarSize.large:
-        return 11.5;
+        return 14.0;
     }
   }
 
@@ -573,3 +573,4 @@ class _FramePainter extends CustomPainter {
         oldDelegate.strokeWidth != strokeWidth;
   }
 }
+
