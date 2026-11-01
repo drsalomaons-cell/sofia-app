@@ -94,5 +94,33 @@ BEGIN
 
   INSERT INTO host_cycles(host_user_id,period_start,period_end)
   VALUES ('audit-idempotency-user','2026-11-01','2026-11-15');
+
+  INSERT INTO store_items(id,item_type,name) VALUES ('audit-lucky-gift','gift','Audit lucky gift');
+  INSERT INTO gift_catalog(item_id,lucky_gift,platform_share_bps)
+  VALUES ('audit-lucky-gift',TRUE,7000);
+
+  v_failed := FALSE;
+  BEGIN
+    UPDATE gift_catalog SET platform_share_bps=6000 WHERE item_id='audit-lucky-gift';
+  EXCEPTION WHEN OTHERS THEN v_failed := TRUE;
+  END;
+  IF NOT v_failed THEN RAISE EXCEPTION 'lucky gift accepted platform share other than 70 percent'; END IF;
+
+  v_failed := FALSE;
+  BEGIN
+    INSERT INTO store_item_prices(item_id,currency,amount)
+    VALUES ('audit-lucky-gift','COIN_GIFT',10);
+  EXCEPTION WHEN OTHERS THEN v_failed := TRUE;
+  END;
+  IF NOT v_failed THEN RAISE EXCEPTION 'lucky gift accepted COIN_GIFT'; END IF;
+
+  v_failed := FALSE;
+  BEGIN
+    INSERT INTO store_item_prices(item_id,currency,amount)
+    VALUES ('audit-ordinary-gift','DIAMOND',10);
+  EXCEPTION WHEN OTHERS THEN v_failed := TRUE;
+  END;
+  IF NOT v_failed THEN RAISE EXCEPTION 'DIAMOND was accepted as a store purchase currency'; END IF;
+
 END;
 $$;
