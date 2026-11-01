@@ -4,7 +4,7 @@
 - Banco de produção: branch `production`; não aplicar migrations nele.
 - Branch de testes: `staging-migracao`.
 - Branch de código: `audit/neon-prep`.
-- Migração inicial: `migrations/001_sofia_core.up.sql`; rollback correspondente em `migrations/001_sofia_core.down.sql`.
+- Migrações: `migrations/001_sofia_core.up.sql` e `migrations/002_business_rule_guards.up.sql`; cada uma tem rollback `.down.sql` correspondente.
 - Aplicar somente em branch isolado; migrations usam PostgreSQL 18.
 - Não inserir dados reais durante a Rodada 1.
 - Todos os valores monetários são inteiros em unidades mínimas (centavos ou unidades inteiras de moeda virtual).
