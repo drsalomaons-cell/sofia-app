@@ -54,3 +54,5 @@ backend/data/users.json
 
 # Dados locais do backend: nunca versionar
 backend/data/
+
+app.env

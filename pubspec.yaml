@@ -81,8 +81,7 @@ flutter:
     - assets/animations/
     - assets/images/branding/
     - assets/icons/
-    - .env
-
+    - app.env
 flutter_launcher_icons:
   android: true
   image_path: "assets/images/app_icon.png"
