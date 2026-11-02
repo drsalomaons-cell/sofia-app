@@ -21,6 +21,7 @@ Validação estrutural posterior:
 - 43 tabelas públicas.
 - 314 colunas públicas.
 - 78 índices públicos.
+- A branch `production` foi consultada novamente e continua sem tabelas públicas de aplicação (`[]`).
 
 Nenhuma tabela de produção foi alterada e nenhum dado real foi importado.
 
@@ -66,6 +67,11 @@ Foram adicionados testes unitários para:
 - Validação de chave, tipo, movimentos, IDs duplicados e valores inteiros.
 - Propagação de falhas do banco.
 - Validação do Pool.
+
+Execução no worktree isolado `D:\\Workspace\\Sofia\\Lote2Backend`:
+- Comando: `node --test test\\neon-ledger.test.js test\\withdrawal.test.js`.
+- Resultado: 7 testes passaram, 0 falharam (4 do adaptador + 3 de saque existentes).
+- Worktree terminou limpo; a cópia original `D:\\Workspace\\Sofia\\source` manteve os dois testes não rastreados intactos.
 
 ## 5. Bloqueio de integração identificado
 
