@@ -714,6 +714,7 @@ class _RoomScreenState extends State<RoomScreen> {
       ),
     );
   }
+}
 
 class _ChatLine {
   final String sender;
