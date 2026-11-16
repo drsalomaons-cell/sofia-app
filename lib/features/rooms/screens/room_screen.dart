@@ -818,6 +818,10 @@ class _SeatTile extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Text(
+            '${index + 1}',
+            style: const TextStyle(color: Color(0xFFFFD76A), fontSize: 8, fontWeight: FontWeight.w900),
+          ),
           Container(
             width: 48,
             height: 48,
