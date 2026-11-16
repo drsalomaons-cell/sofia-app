@@ -32,7 +32,7 @@ class RoomScreen extends StatefulWidget {
     required this.roomName,
     required this.roomTheme,
     this.spectatorCount = 12,
-    this.chairCount = 12,
+    this.chairCount = 8,
   });
 
   @override
