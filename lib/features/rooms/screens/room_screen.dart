@@ -773,24 +773,39 @@ class _SeatTile extends StatelessWidget {
     final taken = s != null && s.userId != null && s.userId!.isNotEmpty;
     if (!taken) {
       final locked = s?.isLocked ?? false;
+      final reserved = s?.role == 'reserved';
       return GestureDetector(
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0x0DFFFFFF),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _seatBorder, width: 1.4),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: reserved ? const Color(0xFFFFD76A) : _seatBorder,
+              width: 1.2,
+            ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                locked ? Icons.lock_outline_rounded : Icons.add_rounded,
-                color: _seatIcon,
-                size: 32,
+                locked
+                    ? Icons.lock_outline_rounded
+                    : reserved
+                        ? Icons.event_seat_rounded
+                        : Icons.add_rounded,
+                color: reserved ? const Color(0xFFFFD76A) : _seatIcon,
+                size: 25,
               ),
-              const SizedBox(height: 4),
-              Text('${index + 1}', style: const TextStyle(color: _seatIcon, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(
+                reserved ? 'Reservada' : '${index + 1}',
+                style: TextStyle(
+                  color: reserved ? const Color(0xFFFFD76A) : _seatIcon,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),
@@ -803,8 +818,8 @@ class _SeatTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 68,
-            height: 68,
+            width: 48,
+            height: 48,
             padding: const EdgeInsets.all(3),
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
@@ -817,17 +832,17 @@ class _SeatTile extends StatelessWidget {
             ),
             child: SenderAvatar(url: s.photoUrl, name: s.userName ?? ''),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 3),
           Text(
             isMe ? 'Você' : (s.userName ?? 'Usuário'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 1),
           Icon(
             muted ? Icons.mic_off_rounded : Icons.mic_rounded,
-            size: 15,
+            size: 12,
             color: muted ? Colors.white54 : const Color(0xFF78F0C4),
           ),
         ],
