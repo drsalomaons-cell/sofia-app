@@ -32,7 +32,7 @@ class RoomScreen extends StatefulWidget {
     required this.roomName,
     required this.roomTheme,
     this.spectatorCount = 12,
-    this.chairCount = 12,
+    this.chairCount = 8,
   });
 
   @override
@@ -293,21 +293,79 @@ class _RoomScreenState extends State<RoomScreen> {
     final room = _room;
     final title = (room != null && room.name.isNotEmpty)
         ? room.name
-        : (widget.roomName.isNotEmpty ? widget.roomName : 'Audio Room Live');
-    final idText = widget.roomId ?? room?.id ?? 'local';
-    final owner = (room != null && room.hostName.isNotEmpty) ? room.hostName : '-';
-    final seatCount = (room?.seats.length ?? widget.chairCount).clamp(1, 30).toInt();
+        : (widget.roomName.isNotEmpty ? widget.roomName : 'Palácio de Voz');
+    SeatModel? hostSeat;
+    if (room != null) {
+      for (final candidate in room.seats) {
+        if (candidate.userId == room.hostId) {
+          hostSeat = candidate;
+          break;
+        }
+      }
+    }
+    final hostPhoto = hostSeat?.photoUrl ?? (room?.hostId == me?.id ? me?.photoUrl : null);
+    final hostName = room?.hostName.isNotEmpty == true ? room!.hostName : 'Anfitrião';
     final online = room?.currentUsers ?? widget.spectatorCount;
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final seatPanelHeight = screenHeight < 760 ? 174.0 : 190.0;
+
+    Widget pill(String label, Color color, {IconData? icon}) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.42)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) Icon(icon, color: color, size: 11),
+          if (icon != null) const SizedBox(width: 3),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Widget filter(String label, {bool selected = false, IconData? icon}) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: selected ? const Color(0xFF00F5D4) : const Color(0x332D2140),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) Icon(icon, size: 10, color: selected ? const Color(0xFF151020) : const Color(0xFFFFD76A)),
+          if (icon != null) const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(
+              color: selected ? const Color(0xFF151020) : Colors.white70,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
 
     return Scaffold(
-      backgroundColor: _bgTop,
+      backgroundColor: const Color(0xFF10091B),
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [_bgTop, _bgBottom],
+            colors: [Color(0xFF10091B), Color(0xFF21102F), Color(0xFF130D22)],
           ),
         ),
         child: Stack(
@@ -316,134 +374,143 @@ class _RoomScreenState extends State<RoomScreen> {
             SafeArea(
               child: Column(
                 children: [
-                  // Topo: vidro translúcido.
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(22),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0x14FFFFFF),
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: const Color(0x1FFFFFFF)),
-                          ),
-                          child: Row(
+                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 5),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 19,
+                          backgroundColor: const Color(0xFF38234C),
+                          backgroundImage: hostPhoto != null && hostPhoto.isNotEmpty ? NetworkImage(hostPhoto) : null,
+                          child: hostPhoto == null || hostPhoto.isEmpty
+                              ? const Icon(Icons.person_rounded, color: Color(0xFF00F5D4))
+                              : null,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              _CircleAction(
-                                icon: Icons.arrow_back_rounded,
-                                size: 40,
-                                onTap: () => Navigator.of(context).maybePop(),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'ID: $idText · Owner: $owner',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Color(0x99FFFFFF),
-                                        fontSize: 10.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x33000000),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: const Color(0x6678F0C4)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 7,
-                                      height: 7,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFF78F0C4),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '$online online',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              _CircleAction(
-                                icon: Icons.more_horiz_rounded,
-                                size: 40,
-                                onTap: _showRoomMenu,
-                              ),
+                              Text(hostName, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+                              const Text('HOST  •  AO VIVO',
+                                style: TextStyle(color: Color(0xFFFFD76A), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.7)),
                             ],
                           ),
                         ),
-                      ),
+                        _CircleAction(
+                          icon: _micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
+                          size: 34, fill: const Color(0x3325D9D0), iconColor: const Color(0xFF00F5D4),
+                          onTap: () => setState(() => _micOn = !_micOn),
+                        ),
+                        const SizedBox(width: 6),
+                        _CircleAction(
+                          icon: Icons.keyboard_arrow_down_rounded, size: 34,
+                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Minimização flutuante ainda precisa ser ligada à navegação.')),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        _CircleAction(
+                          icon: Icons.close_rounded, size: 34,
+                          fill: const Color(0x33FF526D), iconColor: const Color(0xFFFF8295),
+                          onTap: _leaveRoom,
+                        ),
+                      ],
                     ),
                   ),
-                  // Grade de cadeiras (3 colunas).
-                  Expanded(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        Expanded(flex: 5, child: pill('LOUNGE DE VOZ (8 ASSENTOS)', const Color(0xFFB49BFF))),
+                        const SizedBox(width: 5),
+                        Expanded(flex: 3, child: pill('$online online', const Color(0xFF00F5D4), icon: Icons.remove_red_eye_rounded)),
+                        const SizedBox(width: 5),
+                        Expanded(flex: 3, child: pill('TOP 1 DIÁRIO', const Color(0xFFFFD76A), icon: Icons.emoji_events_rounded)),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 7, 14, 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD76A), size: 15),
+                        const SizedBox(width: 6),
+                        const Text('Patronos', style: TextStyle(color: Color(0xFFFFD76A), fontSize: 11, fontWeight: FontWeight.w800)),
+                        const Spacer(),
+                        Text((room?.earnings.toStringAsFixed(0) ?? '0') + ' diamantes',
+                          style: const TextStyle(color: Color(0xFF00F5D4), fontSize: 10, fontWeight: FontWeight.w800)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 7),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 82, height: 82, padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFF00F5D4), width: 2),
+                            gradient: const LinearGradient(colors: [Color(0xFF00F5D4), Color(0xFF7D4DFF), Color(0xFFFFD76A)]),
+                            boxShadow: const [BoxShadow(color: Color(0x7700F5D4), blurRadius: 18, spreadRadius: 1)],
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: const Color(0xFF28163A),
+                            backgroundImage: hostPhoto != null && hostPhoto.isNotEmpty ? NetworkImage(hostPhoto) : null,
+                            child: hostPhoto == null || hostPhoto.isEmpty
+                                ? const Icon(Icons.person_rounded, color: Colors.white, size: 36)
+                                : null,
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                          decoration: BoxDecoration(color: const Color(0xFFFFD76A), borderRadius: BorderRadius.circular(12)),
+                          child: const Text('FALANDO', style: TextStyle(color: Color(0xFF27152C), fontSize: 9, fontWeight: FontWeight.w900)),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+                        Text(hostName, maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Color(0xFF00F5D4), fontSize: 10, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    height: seatPanelHeight,
+                    margin: const EdgeInsets.fromLTRB(12, 0, 12, 7),
+                    padding: const EdgeInsets.fromLTRB(6, 5, 6, 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xAA281A3A),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0x447E68B8)),
+                    ),
                     child: GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
-                      itemCount: seatCount,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
+                      itemCount: 8,
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 0.82,
+                        crossAxisCount: 4, crossAxisSpacing: 3, mainAxisSpacing: 2, mainAxisExtent: 82,
                       ),
                       itemBuilder: (context, index) {
-                        final seat = (room != null && index < room.seats.length)
-                            ? room.seats[index]
-                            : null;
+                        final seat = (room != null && index < room.seats.length) ? room.seats[index] : null;
                         final isMe = seat?.userId != null && seat!.userId == me?.id;
                         return _SeatTile(
-                          index: index,
-                          seat: seat,
-                          isMe: isMe,
-                          micOn: _micOn,
+                          index: index, seat: seat, isMe: isMe, micOn: _micOn,
                           onTap: () {
                             final taken = seat?.userId != null && seat!.userId!.isNotEmpty;
                             if (taken) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    isMe ? 'Seu lugar na sala' : (seat.userName ?? 'Usuário'),
-                                  ),
-                                ),
+                                SnackBar(content: Text(isMe ? 'Seu lugar na sala' : (seat.userName ?? 'Usuário'))),
                               );
                             } else if (seat?.isLocked ?? false) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Cadeira bloqueada')),
-                              );
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cadeira bloqueada')));
+                            } else if (seat?.role == 'reserved') {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cadeira reservada')));
                             } else {
                               _takeSeat(index);
                             }
@@ -452,144 +519,137 @@ class _RoomScreenState extends State<RoomScreen> {
                       },
                     ),
                   ),
-                  if (_showChat && _messages.isNotEmpty)
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 104),
-                      width: double.infinity,
-                      margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0x99000000),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: _messages
-                            .skip(_messages.length > 4 ? _messages.length - 4 : 0)
-                            .map(
-                              (m) => Text.rich(
-                                TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: '${m.sender}: ',
-                                      style: const TextStyle(
-                                        color: _neonA,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    TextSpan(text: m.text),
-                                  ],
-                                ),
-                                style: const TextStyle(color: Colors.white, fontSize: 12),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                  // Barra inferior flutuante com blur.
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0x1FFFFFFF),
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: const Color(0x2EFFFFFF)),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _chatController,
-                                  onSubmitted: (_) => _sendMessage(),
-                                  textInputAction: TextInputAction.send,
-                                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                                  decoration: InputDecoration(
-                                    hintText: 'Say hi to everyone...',
-                                    hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    suffixIcon: IconButton(
-                                      onPressed: _sendMessage,
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                      icon: const Icon(Icons.send_rounded, color: _neonA, size: 20),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              _CircleAction(
-                                icon: _micOn ? Icons.mic_rounded : Icons.mic_off_rounded,
-                                size: 44,
-                                fill: _micOn ? const Color(0xFF1FD6A0) : const Color(0x33FFFFFF),
-                                iconColor: _micOn ? const Color(0xFF07201A) : Colors.white,
-                                onTap: () => setState(() => _micOn = !_micOn),
-                              ),
-                              const SizedBox(width: 8),
-                              _CircleAction(
-                                icon: Icons.call_end_rounded,
-                                size: 44,
-                                fill: const Color(0xFFE53935),
-                                onTap: _leaveRoom,
-                              ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: _openGifts,
-                                child: Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [_neonA, _neonB],
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(color: Color(0x9900F2FE), blurRadius: 16, spreadRadius: 1),
-                                      BoxShadow(color: Color(0x776807BA), blurRadius: 22, spreadRadius: 2),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 10, 5),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(2, 4, 2, 2),
+                              decoration: BoxDecoration(color: const Color(0x33120B20), borderRadius: BorderRadius.circular(16)),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      filter('Todas', selected: true),
+                                      const SizedBox(width: 5),
+                                      filter('Chat'),
+                                      const SizedBox(width: 5),
+                                      filter('Diamantes', icon: Icons.diamond_rounded),
                                     ],
                                   ),
-                                  child: const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 24),
-                                ),
+                                  const SizedBox(height: 5),
+                                  Expanded(
+                                    child: _messages.isEmpty
+                                        ? const Align(
+                                            alignment: Alignment.topLeft,
+                                            child: Padding(
+                                              padding: EdgeInsets.all(8),
+                                              child: Text('Aguardando mensagens da sala...', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                                            ),
+                                          )
+                                        : ListView.builder(
+                                            reverse: true,
+                                            itemCount: _messages.length,
+                                            itemBuilder: (context, index) {
+                                              final message = _messages[_messages.length - 1 - index];
+                                              return Container(
+                                                margin: const EdgeInsets.only(bottom: 5),
+                                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                                                decoration: BoxDecoration(color: const Color(0x662D1C43), borderRadius: BorderRadius.circular(12)),
+                                                child: Text.rich(
+                                                  TextSpan(children: [
+                                                    TextSpan(text: message.sender + ': ',
+                                                      style: const TextStyle(color: Color(0xFF00F5D4), fontWeight: FontWeight.w900)),
+                                                    TextSpan(text: message.text),
+                                                  ]),
+                                                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 7),
+                          SizedBox(
+                            width: 48,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                _CircleAction(
+                                  icon: Icons.sports_kabaddi_rounded, size: 42,
+                                  fill: const Color(0xFF251B45), iconColor: const Color(0xFF00F5D4),
+                                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('PK: integrar ao módulo de batalha existente.')),
+                                  ),
+                                ),
+                                const SizedBox(height: 7),
+                                _CircleAction(
+                                  icon: Icons.card_giftcard_rounded, size: 42,
+                                  fill: const Color(0xFFFFD76A), iconColor: const Color(0xFF2A1733),
+                                  onTap: _openGifts,
+                                ),
+                                const SizedBox(height: 7),
+                                _CircleAction(
+                                  icon: Icons.sports_esports_rounded, size: 42,
+                                  fill: const Color(0xFF251B45), iconColor: const Color(0xFFB79CFF),
+                                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Jogos: integrar ao módulo de jogos existente.')),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(12, 3, 12, 8 + bottomInset * 0.15),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(12, 5, 6, 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xCC302344),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: const Color(0x447F6AAE)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _chatController,
+                              onSubmitted: (_) => _sendMessage(),
+                              textInputAction: TextInputAction.send,
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                              decoration: const InputDecoration(
+                                hintText: 'Dizer no lounge...',
+                                hintStyle: TextStyle(color: Colors.white54, fontSize: 12),
+                                border: InputBorder.none,
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          IconButton(onPressed: _sendMessage, icon: const Icon(Icons.send_rounded, color: Color(0xFF00F5D4), size: 19), visualDensity: VisualDensity.compact),
+                          _CircleAction(
+                            icon: _micOn ? Icons.mic_rounded : Icons.mic_off_rounded, size: 38,
+                            fill: _micOn ? const Color(0xFF00D9B8) : const Color(0x337F6AAE),
+                            iconColor: _micOn ? const Color(0xFF10202A) : Colors.white,
+                            onTap: () => setState(() => _micOn = !_micOn),
+                          ),
+                          const SizedBox(width: 5),
+                          _CircleAction(icon: Icons.call_end_rounded, size: 38, fill: const Color(0xFFE84A68), onTap: _leaveRoom),
+                          const SizedBox(width: 5),
+                          _CircleAction(icon: Icons.card_giftcard_rounded, size: 42, fill: const Color(0xFFFFD76A), iconColor: const Color(0xFF2A1733), onTap: _openGifts),
+                        ],
                       ),
                     ),
                   ),
                 ],
-              ),
-            ),
-            // Botão do foguete: acima da barra, canto inferior direito.
-            Positioned(
-              right: 18,
-              bottom: bottomInset + 96,
-              child: GestureDetector(
-                onTap: () => _launchRocket(me?.name ?? '', me?.photoUrl),
-                child: Container(
-                  width: 54,
-                  height: 54,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFFFE7A1), Color(0xFFFF8A3D)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(color: Color(0x88FFB300), blurRadius: 16, spreadRadius: 1),
-                    ],
-                  ),
-                  child: const Icon(Icons.rocket_launch_rounded, color: Color(0xFF111225), size: 28),
-                ),
               ),
             ),
             if (_entryAsset != null)
@@ -613,36 +673,25 @@ class _RoomScreenState extends State<RoomScreen> {
                           Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(28),
-                              border: Border.all(color: _neonA, width: 2),
-                              boxShadow: const [
-                                BoxShadow(color: Color(0x8800F2FE), blurRadius: 30, spreadRadius: 2),
-                              ],
+                              border: Border.all(color: const Color(0xFF00F5D4), width: 2),
+                              boxShadow: const [BoxShadow(color: Color(0x8800F5D4), blurRadius: 30, spreadRadius: 2)],
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(26),
                               child: Image.asset(
-                                _entryAsset!,
-                                width: 240,
-                                height: 240,
-                                fit: BoxFit.cover,
-                                cacheWidth: 600,
+                                _entryAsset!, width: 240, height: 240, fit: BoxFit.cover, cacheWidth: 600,
                                 errorBuilder: (context, error, stack) => const SizedBox(
-                                  width: 240,
-                                  height: 240,
-                                  child: Icon(Icons.workspace_premium_rounded, color: _neonA, size: 110),
+                                  width: 240, height: 240,
+                                  child: Icon(Icons.workspace_premium_rounded, color: Color(0xFF00F5D4), size: 110),
                                 ),
                               ),
                             ),
                           ),
                           const SizedBox(height: 14),
                           Text(
-                            '$_entryName entrou na sala',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              shadows: [Shadow(color: Colors.black87, blurRadius: 8)],
-                            ),
+                            _entryName + ' entrou na sala',
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900,
+                              shadows: [Shadow(color: Colors.black87, blurRadius: 8)]),
                           ),
                         ],
                       ),
@@ -725,24 +774,39 @@ class _SeatTile extends StatelessWidget {
     final taken = s != null && s.userId != null && s.userId!.isNotEmpty;
     if (!taken) {
       final locked = s?.isLocked ?? false;
+      final reserved = s?.role == 'reserved';
       return GestureDetector(
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0x0DFFFFFF),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: _seatBorder, width: 1.4),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: reserved ? const Color(0xFFFFD76A) : _seatBorder,
+              width: 1.2,
+            ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                locked ? Icons.lock_outline_rounded : Icons.add_rounded,
-                color: _seatIcon,
-                size: 32,
+                locked
+                    ? Icons.lock_outline_rounded
+                    : reserved
+                        ? Icons.event_seat_rounded
+                        : Icons.add_rounded,
+                color: reserved ? const Color(0xFFFFD76A) : _seatIcon,
+                size: 25,
               ),
-              const SizedBox(height: 4),
-              Text('${index + 1}', style: const TextStyle(color: _seatIcon, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(
+                reserved ? 'Reservada' : '${index + 1}',
+                style: TextStyle(
+                  color: reserved ? const Color(0xFFFFD76A) : _seatIcon,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),
@@ -754,9 +818,13 @@ class _SeatTile extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Text(
+            '${index + 1}',
+            style: const TextStyle(color: Color(0xFFFFD76A), fontSize: 8, fontWeight: FontWeight.w900),
+          ),
           Container(
-            width: 68,
-            height: 68,
+            width: 48,
+            height: 48,
             padding: const EdgeInsets.all(3),
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
@@ -769,17 +837,17 @@ class _SeatTile extends StatelessWidget {
             ),
             child: SenderAvatar(url: s.photoUrl, name: s.userName ?? ''),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 3),
           Text(
             isMe ? 'Você' : (s.userName ?? 'Usuário'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 1),
           Icon(
             muted ? Icons.mic_off_rounded : Icons.mic_rounded,
-            size: 15,
+            size: 12,
             color: muted ? Colors.white54 : const Color(0xFF78F0C4),
           ),
         ],
