@@ -5,9 +5,10 @@ import 'package:sofia/features/sunlight/widgets/sunlight_neon_glow.dart';
 import 'package:sofia/models/seat_model.dart';
 
 /// Layout de cadeiras Sunlight Live — trono + fileiras responsivas.
-/// Suporta: 4, 6, 8, 10, 12, 15, 20
+/// Presets oficiais de capacidade: 4 a 30 lugares.
+/// A grade permanece rolável para preservar a ergonomia em telas menores.
 class SofiaSeatsLayout extends StatelessWidget {
-  static const chairPresets = [4, 6, 8, 10, 12, 15, 20];
+  static const chairPresets = [4, 6, 8, 10, 12, 15, 20, 24, 30];
 
   final List<SeatModel> seats;
   final int chairCount;
@@ -44,7 +45,7 @@ class SofiaSeatsLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final count = chairCount.clamp(4, 20);
+    final count = chairCount.clamp(4, 30);
     final scale = SunlightRoomLayout.compactScale(context);
     final seatSize = 62.0 * scale;
 
